@@ -32,7 +32,7 @@ export default function Apply() {
   
   /// Start monitoring after verification
 useEffect(() => {
-  if (verificationComplete && step > 1) {
+  if (verificationComplete && (step > 4||step<4)) {
     startMonitoring();
   }
 
@@ -253,32 +253,37 @@ const videoUrls = [
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>Apply for a Loan - LoanVidya</title>
+        <title>Apply for a Loan - CapitalCue</title>
       </Head>
       
       {/* Progress Bar */}
       <div className="bg-white shadow-sm px-6 py-3">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-indigo-700">LoanVidya</h1>
+          <div className="flex items-center">
+            <img src="/logo.jpeg" alt="CapitalCue" width="40" height="40" />
+            <span className="text-2xl font-bold text-blue-600">Capital</span>
+            <span className="text-2xl font-bold text-green-500">Cue</span>
+
+          </div>
             <div className="hidden md:flex items-center space-x-1">
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    step > index ? 'bg-indigo-600 text-white' : 
-                    step === index + 1 ? 'bg-indigo-100 border-2 border-indigo-600 text-indigo-600' : 
+                    step > index ? 'bg-blue-600 text-white' : 
+                    step === index + 1 ? 'bg-blue-100 border-2 border-blue-600 text-blue-600' : 
                     'bg-gray-200 text-gray-500'
                   }`}>
                     {index + 1}
                   </div>
                   {index < stepTitles.length - 1 && (
-                    <div className={`w-12 h-1 ${step > index ? 'bg-indigo-600' : 'bg-gray-200'}`}></div>
+                    <div className={`w-12 h-1 ${step > index ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
                   )}
                 </div>
               ))}
             </div>
             <div className="md:hidden">
-              <span className="text-indigo-700 font-medium">Step {step} of {stepTitles.length}</span>
+              <span className="text-blue-700 font-medium">Step {step} of {stepTitles.length}</span>
             </div>
           </div>
         </div>
@@ -313,7 +318,7 @@ const videoUrls = [
                   consecutiveDifferentPersonFrames.current = 0;
                   lastMovementTime.current = Date.now();
                 }}
-                className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
               >
                 Resume Session
               </button>
@@ -333,7 +338,7 @@ const videoUrls = [
             </video>
             
             {/* Webcam Feed */}
-            <div className="absolute bottom-8 right-4 w-1/4 h-1/4 max-w-[200px] max-h-[150px] bg-black rounded-lg shadow-lg overflow-hidden border-2 border-indigo-400">
+            <div className="absolute bottom-16 right-4 w-1/4 h-1/4 max-w-[200px] max-h-[150px] bg-black rounded-lg shadow-lg overflow-hidden border-2 border-blue-400">
               <Webcam
                 ref={webcamRef}
                 audio={false}
@@ -353,7 +358,7 @@ const videoUrls = [
           <div className="p-6 lg:p-12 max-w-2xl mx-auto">
             <div className="mb-8">
               <h2 className="text-xl lg:text-3xl font-bold text-gray-800">{stepTitles[step-1]}</h2>
-              <div className="h-1 w-20 bg-indigo-500 mt-2"></div>
+              <div className="h-1 w-20 bg-blue-500 mt-2"></div>
             </div>
             
             {step === 1 && (
@@ -363,8 +368,8 @@ const videoUrls = [
                   Make sure you're in a well-lit area and position your face in
                   the center of the frame.
                 </p>
-                <div className="bg-indigo-50 p-4 rounded-lg mb-6 border-l-4 border-indigo-500">
-                  <p className="text-indigo-800">
+                <div className="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-500">
+                  <p className="text-blue-800">
                     Look straight into the camera and follow the instructions for accurate verification.
                   </p>
                 </div>
@@ -372,13 +377,13 @@ const videoUrls = [
                 {!isVerifying && !verificationComplete ? (
                   <button
                     onClick={verifyIdentity}
-                    className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
                   >
                     Verify My Identity
                   </button>
                 ) : isVerifying ? (
                   <div className="flex flex-col items-center py-6">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mb-4"></div>
                     <p className="text-gray-700 font-medium">Verifying your identity...</p>
                   </div>
                 ) : (
@@ -391,7 +396,7 @@ const videoUrls = [
                     </div>
                     <button
                       onClick={handleNext}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
                     >
                       Continue to Next Step
                     </button>
@@ -402,7 +407,7 @@ const videoUrls = [
 
             {step === 2 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-indigo-600 font-bold mb-4">
+                <h3 className="text-xl text-blue-600 font-bold mb-4">
                   Hello! I'm Rohan, your Virtual Branch Manager.
                 </h3>
                 <p className="text-gray-700 mb-6">
@@ -414,7 +419,7 @@ const videoUrls = [
                   What type of loan are you interested in?
                 </label>
                 <select
-                  className="text-gray-800 w-full p-3 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="text-gray-800 w-full p-3 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors"
                   onChange={(e) => setLoanType(e.target.value)}
                   value={loanType}
                 >
@@ -437,7 +442,7 @@ const videoUrls = [
                     onClick={handleNext}
                     disabled={!loanType}
                     className={`px-6 py-2 rounded-lg text-white font-medium ${
-                      !loanType ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 transition-colors'
+                      !loanType ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 transition-colors'
                     }`}
                   >
                     Next
@@ -448,7 +453,7 @@ const videoUrls = [
 
             {step === 3 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-indigo-600 font-bold mb-4">
+                <h3 className="text-xl text-blue-600 font-bold mb-4">
                   Tell us more about your loan requirements
                 </h3>
                 
@@ -459,7 +464,7 @@ const videoUrls = [
                   <input
                     type="text"
                     placeholder="e.g., Home renovation, Education fees, Medical expenses"
-                    className="w-full p-3 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors"
+                    className="w-full p-3 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors"
                     value={loanPurpose}
                     onChange={(e) => setLoanPurpose(e.target.value)}
                   />
@@ -474,7 +479,7 @@ const videoUrls = [
                     <input
                       type="number"
                       placeholder="Enter amount"
-                      className="w-full p-3 text-gray-800 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-colors"
+                      className="w-full p-3 text-gray-800 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors"
                       value={loanAmount}
                       onChange={(e) => setLoanAmount(e.target.value)}
                     />
@@ -492,7 +497,7 @@ const videoUrls = [
                     onClick={handleNext}
                     disabled={!loanPurpose || !loanAmount}
                     className={`px-6 py-2 rounded-lg text-white font-medium ${
-                      !loanPurpose || !loanAmount ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 transition-colors'
+                      !loanPurpose || !loanAmount ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 transition-colors'
                     }`}
                   >
                     Next
@@ -509,7 +514,7 @@ const videoUrls = [
 
             {step === 5 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-indigo-600 font-bold mb-4">
+                <h3 className="text-xl text-blue-600 font-bold mb-4">
                   Review Your Application
                 </h3>
                 
@@ -539,7 +544,7 @@ const videoUrls = [
                     
                     <button
                       onClick={submitApplication}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
                     >
                       Submit Application
                     </button>
@@ -553,7 +558,7 @@ const videoUrls = [
                   </div>
                 ) : isVerifying ? (
                   <div className="flex flex-col items-center py-12">
-                    <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-indigo-600 mb-6"></div>
+                    <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-blue-600 mb-6"></div>
                     <p className="text-gray-700 text-lg font-medium">Processing your application...</p>
                     <p className="text-gray-500 mt-2">This will take just a moment</p>
                   </div>
@@ -567,7 +572,7 @@ const videoUrls = [
                     </div>
                     <button
                       onClick={handleNext}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
                     >
                       View Loan Decision
                     </button>
@@ -610,10 +615,10 @@ const videoUrls = [
                     </div>
                     
                     <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                      <button className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm">
+                      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
                         Download Approval Letter
                       </button>
-                      <button className="flex-1 border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
+                      <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-medium">
                         View Repayment Schedule
                       </button>
                     </div>
@@ -650,7 +655,7 @@ const videoUrls = [
                     </div>
                     
                     <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                      <button className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm">
+                      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
                         Speak to Loan Officer
                       </button>
                       <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">

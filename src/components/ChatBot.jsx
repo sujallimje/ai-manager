@@ -5,7 +5,7 @@ import axios from "axios";
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hello! I'm your LoanVidya assistant. How can I help you with your loan application today?" }
+    { role: "assistant", content: "Hello! I'm your CapitalCue assistant. How can I help you with your loan application today?" }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +71,7 @@ const ChatBot = () => {
       {isOpen && (
         <div className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col transition-all duration-300 animate-fade-in">
           <div className="bg-indigo-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-            <h3 className="font-bold text-lg">LoanVidya Assistant</h3>
+            <h3 className="font-bold text-lg">CapitalCue Assistant</h3>
             <button onClick={toggleChat} className="focus:outline-none">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
