@@ -54,14 +54,17 @@ export default function Apply() {
 
   // Video URLs for each step
   const videoUrls = [
-    "/videos/manager2.mp4", // Video for step 1
-    "/videos/step2.mp4", // Video for step 2
-    "/videos/step3.mp4", // Video for step 3
-    "/videos/step4.mp4", // Video for step 4
-    "/videos/step5.mp4", // Video for step 5
+    "/videos/s1.mp4", // Video for step 1
+    "/videos/s2a.mp4", // Video for step 2a
+    "/videos/s2b.mp4", // Video for step 2b
+    "/videos/s3.mp4", // Video for step 3
+    "/videos/s4.mp4", // Video for step 4
+    // Video for step 5
     applicationStatus === "approved"
-      ? "/videos/step6-approved.mp4"
-      : "/videos/step6-rejected.mp4", // Video for step 6
+      ? "/videos/s5.mp4"
+      : applicationStatus === "rejected"
+      ? "/videos/s6.mp4"
+      : "/videos/s7.mp4", // Video for step 6
   ];
 
   const verifyIdentity = () => {
