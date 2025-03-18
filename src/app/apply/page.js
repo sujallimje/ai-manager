@@ -21,48 +21,38 @@ export default function Apply() {
   const handleDocumentsComplete = (documents, data) => {
     setUploadedDocuments(documents);
     setExtractedData(data);
-    handleNext(); 
+    handleNext();
   };
 
   const submitApplication = () => {
-    // Show processing state
     setIsVerifying(true);
     
-    // Simulate API call for loan approval
+    // Simulated API call with realistic approval logic
     setTimeout(() => {
       setIsVerifying(false);
       setVerificationComplete(true);
       
-      // Make decision based on extracted data
-      // This is a simplified example - in a real app, you would have more complex logic
-      const totalIncome = extractedData.income?.monthlyIncome ? 
-        parseInt(extractedData.income.monthlyIncome.replace(/[^\d]/g, '')) : 0;
+      // Realistic approval logic based on income vs loan amount
+      const monthlyIncome = extractedData.income?.monthlyIncome 
+        ? parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))
+        : 0;
       
-      const loanAmountValue = parseInt(loanAmount || '0');
-      const eligibilityRatio = totalIncome > 0 ? (loanAmountValue / totalIncome) : 999;
+      const requestedAmount = parseFloat(loanAmount) || 0;
+      const eligibilityRatio = requestedAmount / monthlyIncome;
       
-      // Approval logic: if loan amount is less than 10x monthly income
-      const status = eligibilityRatio < 10 ? "approved" : "rejected";
+      // Approval criteria: 
+      // - Minimum income ₹25,000
+      // - Loan amount up to 10x monthly income
+      // - At least 3 documents verified
+      const status = monthlyIncome >= 25000 && 
+                    eligibilityRatio <= 10 && 
+                    Object.keys(uploadedDocuments).length >= 3
+                    ? "approved"
+                    : "rejected";
+
       setApplicationStatus(status);
-      
-      // Move to the final step
-      setTimeout(() => {
-        setStep(6);
-      }, 1000);
     }, 3000);
   };
-
-  // Video URLs for each step
-  const videoUrls = [
-    "/videos/manager2.mp4", // Video for step 1
-    "/videos/step2.mp4", // Video for step 2
-    "/videos/step3.mp4", // Video for step 3
-    "/videos/step4.mp4", // Video for step 4
-    "/videos/step5.mp4", // Video for step 5
-    applicationStatus === "approved"
-      ? "/videos/step6-approved.mp4"
-      : "/videos/step6-rejected.mp4", // Video for step 6
-  ];
 
   const verifyIdentity = () => {
     setIsVerifying(true);
@@ -78,6 +68,18 @@ export default function Apply() {
       }, 1000);
     }, 3000);
   };
+
+  // Video URLs for each step
+  const videoUrls = [
+    "/videos/manager2.mp4", // Video for step 1
+    "/videos/step2.mp4", // Video for step 2
+    "/videos/step3.mp4", // Video for step 3
+    "/videos/step4.mp4", // Video for step 4
+    "/videos/step5.mp4", // Video for step 5
+    applicationStatus === "approved"
+      ? "/videos/step6-approved.mp4"
+      : "/videos/step6-rejected.mp4", // Video for step 6
+  ];
 
   // Step titles for progress indicator
   const stepTitles = [
@@ -103,7 +105,11 @@ export default function Apply() {
             <div className="hidden md:flex items-center space-x-1">
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step > index ? 'bg-indigo-600 text-white' : step === index + 1 ? 'bg-indigo-100 border-2 border-indigo-600 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    step > index ? 'bg-indigo-600 text-white' : 
+                    step === index + 1 ? 'bg-indigo-100 border-2 border-indigo-600 text-indigo-600' : 
+                    'bg-gray-200 text-gray-500'
+                  }`}>
                     {index + 1}
                   </div>
                   {index < stepTitles.length - 1 && (
@@ -360,6 +366,12 @@ export default function Apply() {
                       </svg>
                       <span className="text-green-800 font-medium">Application processed successfully!</span>
                     </div>
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                    >
+                      View Loan Decision
+                    </button>
                   </div>
                 )}
               </div>
@@ -384,18 +396,17 @@ export default function Apply() {
                     </div>
                     
                     <div className="bg-green-50 p-6 rounded-lg mb-6 border border-green-200">
-                      <p className="text-gray-800 mb-4">
-                        Based on the information you provided, we are pleased to offer you a loan of <span className="font-bold">₹{Number(loanAmount).toLocaleString()}</span>.
-                      </p>
-                      
-                      <div className="bg-white p-4 rounded-md border border-green-100">
-                        <h4 className="text-lg font-medium text-gray-800 mb-3">Next Steps</h4>
-                        <ol className="space-y-2 ml-5 list-decimal">
-                          <li className="text-gray-700">You will receive a confirmation email shortly.</li>
-                          <li className="text-gray-700">Our representative will contact you within 24 hours.</li>
-                          <li className="text-gray-700">Complete the final verification process.</li>
-                          <li className="text-gray-700">The loan amount will be disbursed to your bank account.</li>
-                        </ol>
+                      <h4 className="text-lg font-medium text-gray-800 mb-3">Approval Details</h4>
+                      <div className="space-y-2">
+                        <p className="text-gray-700">
+                          <strong>Approved Amount:</strong> ₹{Number(loanAmount).toLocaleString()}
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Interest Rate:</strong> 12.5% p.a.
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Reason for Approval:</strong> Met all eligibility criteria including income requirements and document verification.
+                        </p>
                       </div>
                     </div>
                     
@@ -404,7 +415,7 @@ export default function Apply() {
                         Download Approval Letter
                       </button>
                       <button className="flex-1 border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
-                        View Loan Details
+                        View Repayment Schedule
                       </button>
                     </div>
                   </div>
@@ -420,36 +431,31 @@ export default function Apply() {
                         Application Not Approved
                       </h3>
                       <p className="text-gray-600">
-                        We're sorry we couldn't approve your application at this time.
+                        We're unable to approve your loan application at this time.
                       </p>
                     </div>
                     
-                    <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
-                      <p className="text-gray-700 mb-4">
-                        Based on our review, we are unable to approve your loan application. This could be due to one or more of the following reasons:
-                      </p>
-                      
-                      <div className="bg-white p-4 rounded-md border border-gray-100 mb-4">
-                        <h4 className="text-lg font-medium text-gray-800 mb-3">Possible Reasons</h4>
-                        <ul className="space-y-2 ml-5 list-disc">
-                          <li className="text-gray-700">Insufficient income relative to the requested loan amount</li>
-                          <li className="text-gray-700">Credit score below our minimum requirements</li>
-                          <li className="text-gray-700">Incomplete or inconsistent documentation</li>
-                          <li className="text-gray-700">High existing debt burden</li>
-                        </ul>
-                      </div>
-                      
-                      <p className="text-gray-700">
-                        You may reapply after 3 months or consider applying for a smaller loan amount.
-                      </p>
+                    <div className="bg-red-50 p-6 rounded-lg mb-6 border border-red-200">
+                      <h4 className="text-lg font-medium text-gray-800 mb-3">Rejection Reasons</h4>
+                      <ul className="list-disc pl-6 space-y-2">
+                        <li className="text-gray-700">
+                          Income-to-loan ratio ({extractedData.income?.monthlyIncome ? (Number(loanAmount)/parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))).toFixed(1) : 'N/A'}x) exceeds maximum allowed limit (10x)
+                        </li>
+                        <li className="text-gray-700">
+                          {Object.keys(uploadedDocuments).length < 3 ? 'Insufficient documents submitted' : 'Document verification issues'}
+                        </li>
+                        <li className="text-gray-700">
+                          Credit history not meeting our current criteria
+                        </li>
+                      </ul>
                     </div>
                     
                     <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                       <button className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm">
-                        Speak to an Advisor
+                        Speak to Loan Officer
                       </button>
                       <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">
-                        Explore Other Options
+                        Try Different Amount
                       </button>
                     </div>
                   </div>
