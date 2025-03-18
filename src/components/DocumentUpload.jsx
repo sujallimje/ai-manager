@@ -1,7 +1,6 @@
-// components/DocumentUpload.jsx
-
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Webcam from "react-webcam";
 
 const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
   const [file, setFile] = useState(null);
@@ -12,10 +11,36 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
   const [extractionProgress, setExtractionProgress] = useState(0);
   const [error, setError] = useState(null);
   const [detailedError, setDetailedError] = useState(null);
+  
+  // New state for video verification
+  const [verificationMethod, setVerificationMethod] = useState("upload"); // "upload" or "video"
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const webcamRef = useRef(null);
+  
+  // Reset state when document type changes
+  useEffect(() => {
+    resetState();
+  }, [documentType]);
+  
+  // Function to reset the component state
+  const resetState = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setIsUploading(false);
+    setIsExtracting(false);
+    setExtractedData(null);
+    setExtractionProgress(0);
+    setError(null);
+    setDetailedError(null);
+    setCapturedImage(null);
+    setIsCapturing(false);
+  };
 
   const handleFileChange = (e) => {
     setError(null);
     setDetailedError(null);
+    setExtractedData(null); // Clear previous extracted data when selecting a new file
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       // Check file size (max 10MB)
@@ -37,6 +62,73 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
         setPreviewUrl(fileReader.result);
       };
       fileReader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const startVideoCapture = () => {
+    setIsCapturing(true);
+    setCapturedImage(null);
+    setError(null);
+    setDetailedError(null);
+    setExtractedData(null); // Clear previous extracted data when starting capture
+  };
+
+  const captureDocument = () => {
+    if (!webcamRef.current) return;
+    
+    try {
+      const imageSrc = webcamRef.current.getScreenshot();
+      if (!imageSrc) {
+        setError("Failed to capture image. Please try again.");
+        return;
+      }
+      
+      setCapturedImage(imageSrc);
+      setIsCapturing(false);
+      
+      // Convert base64 image to a file object for processing
+      fetch(imageSrc)
+        .then(res => res.blob())
+        .then(blob => {
+          const imageFile = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setFile(imageFile);
+          setPreviewUrl(imageSrc);
+          
+          // Automatically process the captured image
+          processCapture(imageFile);
+        })
+        .catch(err => {
+          console.error("Error creating file from capture:", err);
+          setError("Failed to process captured image.");
+        });
+    } catch (err) {
+      console.error("Error during capture:", err);
+      setError("Failed to capture image. Please ensure camera access is allowed.");
+    }
+  };
+  
+  const processCapture = async (imageFile) => {
+    try {
+      setIsUploading(true);
+      setError(null);
+      
+      // Create form data for API
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      formData.append('documentType', documentType);
+      formData.append('source', 'camera_capture');
+      
+      // Notify parent component about upload
+      onUpload(documentType, imageFile);
+      
+      // Start extraction process
+      await extractDocumentData(formData);
+      
+    } catch (error) {
+      console.error("Error processing captured document:", error);
+      setError("Failed to process document from camera. Please try again or use file upload.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -268,45 +360,157 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
     <div className="border rounded-lg p-4 mb-6 bg-white shadow-sm">
       <h2 className="text-xl font-semibold mb-4">{getDocumentTitle()}</h2>
       
-      {/* File input area */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Upload Document
-        </label>
-        <div className="flex items-center justify-center w-full">
-          <label 
-            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+      {/* Method Selection */}
+      <div className="mb-4 border-b pb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Choose Verification Method</h3>
+        <div className="flex space-x-4">
+          <button
+            className={`px-4 py-2 rounded-md ${verificationMethod === 'upload' ? 'bg-indigo-100 text-indigo-700 border border-indigo-300' : 'bg-gray-100 text-gray-700 border border-gray-300'}`}
+            onClick={() => {
+              setVerificationMethod('upload');
+              setIsCapturing(false);
+            }}
           >
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-              </svg>
-              <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-              <p className="text-xs text-gray-500">PNG, JPG or PDF (Max 10MB)</p>
-            </div>
-            <input 
-              type="file" 
-              className="hidden" 
-              accept="image/png, image/jpeg, application/pdf" 
-              onChange={handleFileChange}
-              disabled={isUploading || isExtracting}
-            />
-          </label>
+            File Upload
+          </button>
+          <button
+            className={`px-4 py-2 rounded-md ${verificationMethod === 'video' ? 'bg-indigo-100 text-indigo-700 border border-indigo-300' : 'bg-gray-100 text-gray-700 border border-gray-300'}`}
+            onClick={() => {
+              setVerificationMethod('video');
+            }}
+          >
+            Verify by Video
+          </button>
         </div>
       </div>
       
-      {/* Preview area */}
-      {previewUrl && (
-        <div className="mt-4 mb-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Document Preview</h3>
-          <div className="relative h-48 border rounded-md overflow-hidden">
-            <Image 
-              src={previewUrl} 
-              alt="Document preview" 
-              fill 
-              style={{ objectFit: 'contain' }} 
-            />
+      {/* File Upload Method */}
+      {verificationMethod === 'upload' && !isCapturing && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Document
+            </label>
+            <div className="flex items-center justify-center w-full">
+              <label 
+                className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                  </svg>
+                  <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                  <p className="text-xs text-gray-500">PNG, JPG or PDF (Max 10MB)</p>
+                </div>
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/png, image/jpeg, application/pdf" 
+                  onChange={handleFileChange}
+                  disabled={isUploading || isExtracting}
+                />
+              </label>
+            </div>
           </div>
+        
+          {/* Preview area */}
+          {previewUrl && verificationMethod === 'upload' && (
+            <div className="mt-4 mb-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Document Preview</h3>
+              <div className="relative h-48 border rounded-md overflow-hidden">
+                <Image 
+                  src={previewUrl} 
+                  alt="Document preview" 
+                  fill 
+                  style={{ objectFit: 'contain' }} 
+                />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      
+      {/* Video Verification Method */}
+      {verificationMethod === 'video' && (
+        <div className="mb-4">
+          <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
+            <p className="text-gray-700 mb-2 font-medium">Verify by Video</p>
+            <p className="text-sm text-gray-600 mb-4">
+              Position your {documentType === 'identity' ? 'ID card' : 'document'} clearly in front of the camera, 
+              ensuring good lighting and that all text is visible. When ready, click "Capture Document".
+            </p>
+          </div>
+          
+          {!isCapturing && !capturedImage && (
+            <button
+              onClick={startVideoCapture}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors w-full"
+            >
+              Start Camera
+            </button>
+          )}
+          
+          {isCapturing && (
+            <div className="relative mb-4">
+              <div className="relative h-80 border-2 border-indigo-500 rounded-md overflow-hidden">
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  width="100%"
+                  height="100%"
+                  className="object-contain"
+                  videoConstraints={{
+                    facingMode: "environment" // Use back camera on mobile devices
+                  }}
+                />
+              </div>
+              <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center pointer-events-none">
+                <div className="border-2 border-dashed border-yellow-500 w-4/5 h-3/5 opacity-50"></div>
+              </div>
+              <p className="text-center text-sm text-gray-600 mt-2">
+                Position your document inside the yellow outline
+              </p>
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={captureDocument}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                >
+                  Capture Document
+                </button>
+                <button
+                  onClick={() => setIsCapturing(false)}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors ml-4"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {capturedImage && (
+            <div className="mt-4 mb-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Captured Document</h3>
+              <div className="relative h-48 border rounded-md overflow-hidden">
+                <Image 
+                  src={capturedImage} 
+                  alt="Captured document" 
+                  fill 
+                  style={{ objectFit: 'contain' }} 
+                />
+              </div>
+              {!isExtracting && !extractedData && (
+                <div className="flex mt-2">
+                  <button
+                    onClick={startVideoCapture}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors mr-2"
+                  >
+                    Retake
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       
@@ -344,19 +548,21 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
       {extractedData && renderExtractedData()}
       
       {/* Upload button */}
-      <div className="mt-4">
-        <button
-          onClick={uploadDocument}
-          disabled={!file || isUploading || isExtracting}
-          className={`px-4 py-2 rounded-md text-white ${
-            !file || isUploading || isExtracting
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {isUploading || isExtracting ? 'Processing...' : 'Process Document'}
-        </button>
-      </div>
+      {verificationMethod === 'upload' && !isCapturing && (
+        <div className="mt-4">
+          <button
+            onClick={uploadDocument}
+            disabled={!file || isUploading || isExtracting}
+            className={`px-4 py-2 rounded-md text-white ${
+              !file || isUploading || isExtracting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {isUploading || isExtracting ? 'Processing...' : 'Process Document'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

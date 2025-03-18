@@ -92,14 +92,14 @@ export default function Apply() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>Apply for a Loan - LoanVidya</title>
+        <title>Apply for a Loan - AIBranch</title>
       </Head>
       
       {/* Progress Bar */}
       <div className="bg-white shadow-sm px-6 py-3">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-indigo-700">LoanVidya</h1>
+            <h1 className="text-2xl font-bold text-indigo-700">AIBranch</h1>
             <div className="hidden md:flex items-center space-x-1">
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
