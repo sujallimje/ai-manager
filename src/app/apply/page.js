@@ -176,28 +176,50 @@ const handleDocumentsComplete = (documents, data) => {
   handleNext();
 };
 
-const submitApplication = () => {
-  setIsVerifying(true);
-
-  setTimeout(() => {
-    setIsVerifying(false);
-    setVerificationComplete(true);
-
-    const totalIncome = extractedData.income?.monthlyIncome
-      ? parseInt(extractedData.income.monthlyIncome.replace(/[^\d]/g, ""))
-      : 0;
-
-    const loanAmountValue = parseInt(loanAmount || "0");
-    const eligibilityRatio = totalIncome > 0 ? loanAmountValue / totalIncome : 999;
-
-    const status = eligibilityRatio < 10 ? "approved" : "rejected";
-    setApplicationStatus(status);x
-
+  const submitApplication = () => {
+    setIsVerifying(true);
+    
+    // Simulated API call with realistic approval logic
     setTimeout(() => {
-      setStep(6);
-    }, 1000);
-  }, 3000);
-};
+      setIsVerifying(false);
+      setVerificationComplete(true);
+      
+      // Realistic approval logic based on income vs loan amount
+      const monthlyIncome = extractedData.income?.monthlyIncome 
+        ? parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))
+        : 0;
+      
+      const requestedAmount = parseFloat(loanAmount) || 0;
+      const eligibilityRatio = requestedAmount / monthlyIncome;
+      
+      // Approval criteria: 
+      // - Minimum income ₹25,000
+      // - Loan amount up to 10x monthly income
+      // - At least 3 documents verified
+      const status = monthlyIncome >= 25000 && 
+                    eligibilityRatio <= 10 && 
+                    Object.keys(uploadedDocuments).length >= 3
+                    ? "approved"
+                    : "rejected";
+
+      setApplicationStatus(status);
+    }, 3000);
+  };
+
+  const verifyIdentity = () => {
+    setIsVerifying(true);
+    
+    // Simulate verification process
+    setTimeout(() => {
+      setIsVerifying(false);
+      setVerificationComplete(true);
+      
+      // Auto-advance after verification
+      setTimeout(() => {
+        handleNext();
+      }, 1000);
+    }, 3000);
+  };
 
 // Video URLs for each step
 
@@ -216,18 +238,6 @@ const videoUrls = [
     : "/videos/s7.mp4", // Video for step 6
 ];
 
-const verifyIdentity = () => {
-  setIsVerifying(true);
-
-  setTimeout(() => {
-    setIsVerifying(false);
-    setVerificationComplete(true);
-
-    setTimeout(() => {
-      handleNext();
-    }, 1000);
-  }, 3000);
-};
 
 
   // Step titles for progress indicator
@@ -254,7 +264,11 @@ const verifyIdentity = () => {
             <div className="hidden md:flex items-center space-x-1">
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step > index ? 'bg-indigo-600 text-white' : step === index + 1 ? 'bg-indigo-100 border-2 border-indigo-600 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    step > index ? 'bg-indigo-600 text-white' : 
+                    step === index + 1 ? 'bg-indigo-100 border-2 border-indigo-600 text-indigo-600' : 
+                    'bg-gray-200 text-gray-500'
+                  }`}>
                     {index + 1}
                   </div>
                   {index < stepTitles.length - 1 && (
@@ -308,18 +322,18 @@ const verifyIdentity = () => {
         </div>
       )}
       
-      <div className="flex flex-col lg:flex-row">
+      <div className="flex flex-col lg:flex-row h-screen">
         {/* Video Section (Left Side on larger screens, Top on mobile) */}
-        <div className="lg:w-1/2 bg-gray-900 lg:min-h-screen">
+        <div className="lg:w-1/2 bg-gray-900 lg:h-screen sticky top-0 overflow-hidden">
           <div className="relative w-full h-64 lg:h-full">
             {/* Pre-recorded Video */}
-            <video key={step} autoPlay controls className="w-full h-full object-cover">
+            <video key={step} autoPlay  className="absolute w-full h-full lg:max-h-[100vh] object-cover">
               <source src={videoUrls[step - 1]} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
             
             {/* Webcam Feed */}
-            <div className="absolute bottom-4 right-4 w-1/4 h-1/4 max-w-[200px] max-h-[150px] bg-black rounded-lg shadow-lg overflow-hidden border-2 border-indigo-400">
+            <div className="absolute bottom-8 right-4 w-1/4 h-1/4 max-w-[200px] max-h-[150px] bg-black rounded-lg shadow-lg overflow-hidden border-2 border-indigo-400">
               <Webcam
                 ref={webcamRef}
                 audio={false}
@@ -334,7 +348,8 @@ const verifyIdentity = () => {
         </div>
         
         {/* Form Section (Right Side on larger screens, Bottom on mobile) */}
-        <div className="lg:w-1/2 bg-white lg:min-h-screen">
+        <div className="lg:w-1/2 w-full overflow-y-auto bg-white">
+        
           <div className="p-6 lg:p-12 max-w-2xl mx-auto">
             <div className="mb-8">
               <h2 className="text-xl lg:text-3xl font-bold text-gray-800">{stepTitles[step-1]}</h2>
@@ -550,6 +565,12 @@ const verifyIdentity = () => {
                       </svg>
                       <span className="text-green-800 font-medium">Application processed successfully!</span>
                     </div>
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                    >
+                      View Loan Decision
+                    </button>
                   </div>
                 )}
               </div>
@@ -574,18 +595,17 @@ const verifyIdentity = () => {
                     </div>
                     
                     <div className="bg-green-50 p-6 rounded-lg mb-6 border border-green-200">
-                      <p className="text-gray-800 mb-4">
-                        Based on the information you provided, we are pleased to offer you a loan of <span className="font-bold">₹{Number(loanAmount).toLocaleString()}</span>.
-                      </p>
-                      
-                      <div className="bg-white p-4 rounded-md border border-green-100">
-                        <h4 className="text-lg font-medium text-gray-800 mb-3">Next Steps</h4>
-                        <ol className="space-y-2 ml-5 list-decimal">
-                          <li className="text-gray-700">You will receive a confirmation email shortly.</li>
-                          <li className="text-gray-700">Our representative will contact you within 24 hours.</li>
-                          <li className="text-gray-700">Complete the final verification process.</li>
-                          <li className="text-gray-700">The loan amount will be disbursed to your bank account.</li>
-                        </ol>
+                      <h4 className="text-lg font-medium text-gray-800 mb-3">Approval Details</h4>
+                      <div className="space-y-2">
+                        <p className="text-gray-700">
+                          <strong>Approved Amount:</strong> ₹{Number(loanAmount).toLocaleString()}
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Interest Rate:</strong> 12.5% p.a.
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Reason for Approval:</strong> Met all eligibility criteria including income requirements and document verification.
+                        </p>
                       </div>
                     </div>
                     
@@ -594,7 +614,7 @@ const verifyIdentity = () => {
                         Download Approval Letter
                       </button>
                       <button className="flex-1 border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
-                        View Loan Details
+                        View Repayment Schedule
                       </button>
                     </div>
                   </div>
@@ -610,36 +630,31 @@ const verifyIdentity = () => {
                         Application Not Approved
                       </h3>
                       <p className="text-gray-600">
-                        We're sorry we couldn't approve your application at this time.
+                        We're unable to approve your loan application at this time.
                       </p>
                     </div>
                     
-                    <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
-                      <p className="text-gray-700 mb-4">
-                        Based on our review, we are unable to approve your loan application. This could be due to one or more of the following reasons:
-                      </p>
-                      
-                      <div className="bg-white p-4 rounded-md border border-gray-100 mb-4">
-                        <h4 className="text-lg font-medium text-gray-800 mb-3">Possible Reasons</h4>
-                        <ul className="space-y-2 ml-5 list-disc">
-                          <li className="text-gray-700">Insufficient income relative to the requested loan amount</li>
-                          <li className="text-gray-700">Credit score below our minimum requirements</li>
-                          <li className="text-gray-700">Incomplete or inconsistent documentation</li>
-                          <li className="text-gray-700">High existing debt burden</li>
-                        </ul>
-                      </div>
-                      
-                      <p className="text-gray-700">
-                        You may reapply after 3 months or consider applying for a smaller loan amount.
-                      </p>
+                    <div className="bg-red-50 p-6 rounded-lg mb-6 border border-red-200">
+                      <h4 className="text-lg font-medium text-gray-800 mb-3">Rejection Reasons</h4>
+                      <ul className="list-disc pl-6 space-y-2">
+                        <li className="text-gray-700">
+                          Income-to-loan ratio ({extractedData.income?.monthlyIncome ? (Number(loanAmount)/parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))).toFixed(1) : 'N/A'}x) exceeds maximum allowed limit (10x)
+                        </li>
+                        <li className="text-gray-700">
+                          {Object.keys(uploadedDocuments).length < 3 ? 'Insufficient documents submitted' : 'Document verification issues'}
+                        </li>
+                        <li className="text-gray-700">
+                          Credit history not meeting our current criteria
+                        </li>
+                      </ul>
                     </div>
                     
                     <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                       <button className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm">
-                        Speak to an Advisor
+                        Speak to Loan Officer
                       </button>
                       <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">
-                        Explore Other Options
+                        Try Different Amount
                       </button>
                     </div>
                   </div>
