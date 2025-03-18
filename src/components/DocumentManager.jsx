@@ -437,7 +437,7 @@ const DocumentManager = ({ onComplete }) => {
       </div>
 
       {/* Show manual entry option */}
-      {/* <div className="flex justify-end mb-3">
+      <div className="flex justify-end mb-3">
         <button
           onClick={() => toggleManualEntry(currentDocType)}
           className="text-blue-600 text-sm hover:text-blue-800 flex items-center"
@@ -447,11 +447,12 @@ const DocumentManager = ({ onComplete }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
         </button>
-      </div> */}
+      </div>
 
       {/* Show document upload or manual entry form */}
       {!isManualEntryActive ? (
         <DocumentUpload
+          key={currentDocType} // Add key to force remount when document type changes
           documentType={currentDocType}
           onUpload={(docType, file, method) => handleDocumentUpload(docType, file, method)}
           onExtract={handleDataExtraction}

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Webcam from "react-webcam";
 
@@ -17,10 +17,30 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const webcamRef = useRef(null);
+  
+  // Reset state when document type changes
+  useEffect(() => {
+    resetState();
+  }, [documentType]);
+  
+  // Function to reset the component state
+  const resetState = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setIsUploading(false);
+    setIsExtracting(false);
+    setExtractedData(null);
+    setExtractionProgress(0);
+    setError(null);
+    setDetailedError(null);
+    setCapturedImage(null);
+    setIsCapturing(false);
+  };
 
   const handleFileChange = (e) => {
     setError(null);
     setDetailedError(null);
+    setExtractedData(null); // Clear previous extracted data when selecting a new file
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       // Check file size (max 10MB)
@@ -50,7 +70,7 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
     setCapturedImage(null);
     setError(null);
     setDetailedError(null);
-    setExtractedData(null);
+    setExtractedData(null); // Clear previous extracted data when starting capture
   };
 
   const captureDocument = () => {
