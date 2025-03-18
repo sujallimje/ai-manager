@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import Webcam from "react-webcam";
 import DocumentManager from "../../components/DocumentManager";
+import ChatBot from "../../components/ChatBot"; // Import the ChatBot component
+
 
 export default function Apply() {
   const [step, setStep] = useState(1);
@@ -662,6 +664,7 @@ const videoUrls = [
           </div>
         </div>
       </div>
+      <ChatBot />
     </div>
   );
 }
