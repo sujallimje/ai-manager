@@ -35,7 +35,9 @@ export default function Apply() {
     "/videos/step3.mp4", // Video for step 3
     "/videos/step4.mp4", // Video for step 4
     "/videos/step5.mp4", // Video for step 5
-    applicationStatus === "approved" ? "/videos/step6-approved.mp4" : "/videos/step6-rejected.mp4", // Video for step 6
+    applicationStatus === "approved"
+      ? "/videos/step6-approved.mp4"
+      : "/videos/step6-rejected.mp4", // Video for step 6
   ];
 
   return (
@@ -50,41 +52,34 @@ export default function Apply() {
           <source src={videoUrls[step - 1]} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-
-        
       </div>
-{/* Webcam Feed (Bottom Left) */}
-        <div className="absolute bottom-4 left-4 w-64 h-48  bg-black rounded-lg  shadow-lg">
-          <Webcam
-            audio={false} // Disable audio
-            mirrored={true} // Mirror the webcam feed
-            screenshotFormat="image/jpeg"
-            width="100%"
-            height="100%"
-            className="object-cover"
-          />
-        </div>
+      {/* Webcam Feed (Bottom Left) */}
+      <div className="absolute bottom-4 left-4 w-64 h-48  bg-black rounded-lg  shadow-lg">
+        <Webcam
+          audio={false} // Disable audio
+          mirrored={true} // Mirror the webcam feed
+          screenshotFormat="image/jpeg"
+          width="100%"
+          height="100%"
+          className="object-cover"
+        />
+      </div>
       {/* Form Section (Right Side) */}
       <div className="w-1/2 bg-white p-8 flex flex-col items-center justify-center">
         <div className="w-full max-w-md">
           {step === 1 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Identity Verification</h2>
+              <h2 className="text-2xl text-blue-500 font-bold mb-4">Identity Verification</h2>
               <p className="text-gray-700 mb-4">
                 Please adjust your camera so that your face is clearly visible.
-                Make sure you’re in a well-lit area and position your face in the
-                center of the frame.
+                Make sure you’re in a well-lit area and position your face in
+                the center of the frame.
               </p>
               <p className="text-gray-700 mb-4">
-                Please look straight into the camera and follow the instructions.
+                Please look straight into the camera and follow the
+                instructions.
               </p>
               <div className="flex justify-between">
-                <button
-                  onClick={handleBack}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  Back
-                </button>
                 <button
                   onClick={handleNext}
                   className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -116,23 +111,31 @@ export default function Apply() {
                 <option value="home">Home Loan</option>
                 <option value="business">Business Loan</option>
               </select>
-              <button
-                onClick={handleNext}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Next
-              </button>
+              <div className="flex justify-between">
+                <button
+                  onClick={handleBack}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
 
           {step === 3 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">
+              <h2 className="text-2xl text-blue-500 font-bold mb-4">
                 May I know the purpose of the loan?
               </h2>
               <p className="text-gray-700 mb-4">
-                For example, if it’s a personal loan, is it for education, medical
-                expenses, or any other purpose?
+                For example, if it’s a personal loan, is it for education,
+                medical expenses, or any other purpose?
               </p>
               <input
                 type="text"
@@ -168,7 +171,7 @@ export default function Apply() {
 
           {step === 4 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Document Upload</h2>
+              <h2 className="text-2xl text-blue-500 font-bold mb-4">Document Upload</h2>
               <p className="text-gray-700 mb-4">
                 Please upload the following documents:
               </p>
@@ -207,7 +210,7 @@ export default function Apply() {
 
           {step === 5 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">
+              <h2 className="text-2xl text-blue-500 font-bold mb-4">
                 Analyzing Your Application
               </h2>
               <p className="text-gray-700 mb-4">
@@ -227,7 +230,7 @@ export default function Apply() {
             <div>
               {applicationStatus === "approved" ? (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4 text-green-600">
+                  <h2 className="text-2xl  font-bold mb-4 text-green-600">
                     Good news! Your loan application has been approved.
                   </h2>
                   <p className="text-gray-700 mb-4">
@@ -238,8 +241,8 @@ export default function Apply() {
               ) : (
                 <div>
                   <h2 className="text-2xl font-bold mb-4 text-red-600">
-                    We’re sorry. Unfortunately, your application did not meet our
-                    eligibility criteria.
+                    We’re sorry. Unfortunately, your application did not meet
+                    our eligibility criteria.
                   </h2>
                   <p className="text-gray-700 mb-4">
                     You’ll receive an email with the detailed reason. If you’d
