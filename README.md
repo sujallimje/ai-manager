@@ -3,11 +3,10 @@
 ## Overview
 The **AI Branch Manager** is a web-based platform designed to provide a digital, branch-like experience for users applying for loans. Using AI-powered video interactions, document processing, and rule-based eligibility checks, this system guides users through the loan application process in an intuitive and interactive manner.
 
-## Demo Video
-A demonstration video showcasing the AI Branch Manager's functionality is available in the project. You can view it at:
-```
-CapitalCue - Your AI Branch Manager.mp4
-```
+## Demo Video 🎥
+A demonstration video showcasing the AI Branch Manager's functionality is available.
+
+https://github.com/user-attachments/assets/935a9ac6-850d-4d84-a442-47052da35f33
 
 This demo highlights the key features and user flow of the application, providing a visual overview of how the system works.
 
@@ -139,6 +138,3 @@ The system uses advanced OCR techniques to extract information from various docu
 - Add multilingual support with AI-generated voice responses.
 - Integrate with banking APIs for real-time loan approval processing.
 - Enhance OCR accuracy with deep learning-based document analysis.
-
----
-Developed for a **48-hour Hackathon Challenge**.
