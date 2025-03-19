@@ -8,8 +8,10 @@ import json
 from PIL import Image
 import numpy as np
 import tempfile
+import logging
+logging.basicConfig(filename='ocr_error.log', level=logging.DEBUG)
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\Asus\Downloads\Tesseract-OCR\Tesseract-OCR\tesseract.exe'
 
 def preprocess_image(image_path):
     """
@@ -60,23 +62,67 @@ def extract_aadhaar_info(image_path):
         'id_number': ''
     }
     
-    # Try to extract name with label first
+    # List of words to filter out (common non-name content)
+    filter_words = ['download', 'government', 'aadhaar', 'india', 'unique', 'identification', 
+                   'authority', 'uidai', 'male', 'female', 'address', 'dob', 'year', 'birth', 
+                   'gender', 'pdf', 'file', 'document', 'image', 'photo', 'enroll', 'number',
+                   'verify', 'verification', 'valid', 'copy', 'signature', 'date', 'issue']
+    
+    # Try to extract name with label first - this is the most reliable method
     name_match = re.search(r'(?:Name|नाम|పేరు|நபெயர்|నామము)[\s:]+([\w\s]+)', text, re.IGNORECASE)
     
-    # If no labeled name found, try to extract name based on position
-    if not name_match:
-        lines = text.split('\n')
-        for line in lines:
-            clean_line = line.strip()
-            if clean_line and len(clean_line) > 3 and len(clean_line) < 40:
-                alpha_count = sum(c.isalpha() or c.isspace() for c in clean_line)
-                if alpha_count / len(clean_line) > 0.8:
-                    headers = ['government', 'aadhaar', 'india', 'unique', 'identification', 'authority', 'uidai']
-                    if not any(header in clean_line.lower() for header in headers):
-                        result['name'] = clean_line
-                        break
+    if name_match:
+        candidate_name = name_match.group(1).strip()
+        words = candidate_name.split()
+        # Filter out any words that match our filter list
+        filtered_words = [w for w in words if w.lower() not in filter_words]
+        if filtered_words:
+            result['name'] = ' '.join(filtered_words).title()
     else:
-        result['name'] = name_match.group(1).strip()
+        # If no labeled name found, try another approach focused on name position
+        lines = text.split('\n')
+        
+        # Look specifically for a line that has 2-4 words, all capitalized or proper case
+        # and appears in the first 10 lines of the document (names usually appear near the top)
+        for i, line in enumerate(lines[:10]):
+            if i < 2:  # Skip first couple of lines (usually headers)
+                continue
+                
+            clean_line = line.strip()
+            words = [w for w in clean_line.split() if len(w) > 1]  # Ignore single-letter words
+            
+            # Skip lines that are too short or too long
+            if len(words) < 2 or len(words) > 5:
+                continue
+                
+            # Skip lines with filter words
+            if any(filter_word in clean_line.lower() for filter_word in filter_words):
+                continue
+                
+            # Check if all words are alphabetic and proper case (first letter capital)
+            valid_name = True
+            for word in words:
+                if not word.isalpha() or not (word[0].isupper() and any(c.islower() for c in word[1:])):
+                    valid_name = False
+                    break
+                    
+            if valid_name:
+                result['name'] = clean_line
+                break
+                
+        # If still no name found, look for any line with 2-3 proper case words
+        if not result['name']:
+            for line in lines:
+                clean_line = line.strip()
+                words = [w for w in clean_line.split() if len(w) > 1 and w.isalpha()]
+                
+                if len(words) >= 2 and len(words) <= 4:
+                    # Check if all words are proper case
+                    if all(word[0].isupper() and word[1:].lower() == word[1:] for word in words):
+                        # Ensure no filter words
+                        if not any(w.lower() in filter_words for w in words):
+                            result['name'] = ' '.join(words)
+                            break
     
     # Extract DOB (usually in format DD/MM/YYYY)
     dob_match = re.search(r'(?:DOB|Date of Birth|ജനിച്ച തീയതി|जन्म तिथि|జన్మదినము)[\s:]+([\d/]+)', text, re.IGNORECASE)
@@ -101,11 +147,9 @@ def extract_aadhaar_info(image_path):
     
     # Extract address
     address_lines = []
-    address_started = False
     address_pattern = re.search(r'(?:Address|पता)[\s:]+(.*)', text, re.IGNORECASE)
     
     if address_pattern:
-        address_started = True
         address_lines.append(address_pattern.group(1).strip())
         
         lines = text.split('\n')
@@ -124,6 +168,9 @@ def extract_aadhaar_info(image_path):
     
     if address_lines:
         result['address'] = ' '.join(address_lines)
+    
+    # Debug output - print entire recognized text to help with troubleshooting
+    # print("OCR TEXT:", text)
     
     return result
 
@@ -507,10 +554,11 @@ if __name__ == "__main__":
             elif doc_type == 'bank':
                 if enhanced_result.get('account_number') or enhanced_result.get('bank_name'):
                     result = enhanced_result
-        
         # Print result as JSON
         print(json.dumps(result))
         
     except Exception as e:
+        logging.error(f"Error processing {document_path}: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
