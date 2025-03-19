@@ -3,6 +3,14 @@
 ## Overview
 The **AI Branch Manager** is a web-based platform designed to provide a digital, branch-like experience for users applying for loans. Using AI-powered video interactions, document processing, and rule-based eligibility checks, this system guides users through the loan application process in an intuitive and interactive manner.
 
+## Demo Video
+A demonstration video showcasing the AI Branch Manager's functionality is available in the project. You can view it at:
+```
+CapitalCue - Your AI Branch Manager.mp4
+```
+
+This demo highlights the key features and user flow of the application, providing a visual overview of how the system works.
+
 ## Features
 ### 1. Virtual AI Branch Manager
 - Users interact with a pre-recorded AI video assistant that mimics a real-life bank manager.
@@ -34,6 +42,7 @@ The **AI Branch Manager** is a web-based platform designed to provide a digital,
 ## Folder Structure
 ```
 manager/
+│── CapitalCue - Your AI Branch Manager.mp4  # Demo video in root directory
 │── processing/                 # Loan application processing logic
 │   └── ocr_extraction.py       # Document OCR and data extraction
 │── public/                     # Public assets (images, icons, videos)
@@ -93,6 +102,7 @@ Ensure you have the following installed:
    ```
 6. **Access the application**
    - Open [http://localhost:3000](http://localhost:3000) in your browser.
+   - To view the demo video, access the `CapitalCue - Your AI Branch Manager.mp4` file in the root project directory.
 
 ## Document Processing
 The system uses advanced OCR techniques to extract information from various documents:
