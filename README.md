@@ -1,100 +1,88 @@
-# Loan Manager
-
-A modern web application for managing loan applications, approvals, and tracking built with Next.js.
+# AI Branch Manager – Video-Based Loan Assistance
 
 ## Overview
-
-Loan Manager is a comprehensive banking solution designed to streamline the loan application process. It provides an intuitive interface for customers to apply for loans and for bank staff to manage, approve, and track loan applications efficiently.
+The **AI Branch Manager** is a web-based platform designed to provide a digital, branch-like experience for users applying for loans. Using AI-powered video interactions, document processing, and rule-based eligibility checks, this system guides users through the loan application process in an intuitive and interactive manner.
 
 ## Features
+### 1. Virtual AI Branch Manager
+- Users interact with a pre-recorded AI video assistant that mimics a real-life bank manager.
+- The AI Manager asks structured financial questions and provides step-by-step guidance on loan applications.
 
-- **User Authentication**: Secure login system for both customers and bank administrators
-- **Loan Application**: User-friendly interface for customers to submit loan applications
-- **Application Processing**: Tools for bank staff to review and process loan applications
-- **Status Tracking**: Real-time updates on loan application status
-- **Document Management**: Upload and storage of required documentation
-- **Notification System**: Automated alerts for both customers and administrators
-- **Dashboard Analytics**: Visual representation of loan data and performance metrics
+### 2. Video-Based Customer Interaction
+- Users respond to financial queries by recording video responses.
+- Basic facial verification ensures that the same applicant continues throughout the process, preventing fraud.
 
-## Tech Stack
+### 3. Simplified Document Submission & Processing
+- Users upload images of Aadhaar, PAN, or income proof via mobile or webcam.
+- AI extracts key details such as name, date of birth, income, and employment type from the documents.
 
-- **Frontend**: React.js with Next.js framework
-- **Styling**: Tailwind CSS
-- **Database**: [Your database choice here]
-- **Authentication**: [Your auth solution here]
-- **Deployment**: [Your deployment platform here]
+### 4. Loan Eligibility & Decisioning
+- A rule-based system evaluates loan eligibility using user responses and document data.
+- Instant feedback provided:
+  - ✅ Approved
+  - ❌ Rejected (with reasons)
+  - 🔄 More Info Needed
 
-## Getting Started
+### 5. Multi-Language Support *(Optional Enhancement)*
+- Pre-recorded assistant videos can be available in multiple Indian languages for a better user experience.
 
+## Folder Structure
+```
+manager/
+│── processing/                 # Loan application processing logic
+│── public/                     # Public assets (images, icons, videos)
+│── src/
+│   ├── app/                    # Main application logic
+│   ├── components/             # Reusable UI components
+│   ├── pages/
+│   │   ├── api/                # Backend API routes
+│   │   ├── index.tsx           # Landing page
+│   ├── utils/                  # Utility functions
+│── .gitignore                  # Files to be ignored by Git
+│── README.md                   # Project documentation
+│── next-env.d.ts               # TypeScript environment definitions
+│── next.config.ts              # Next.js configuration
+│── package.json                # Project dependencies and scripts
+│── postcss.config.mjs          # PostCSS configuration
+│── tsconfig.json               # TypeScript configuration
+```
+
+## Installation & Setup
 ### Prerequisites
+Ensure you have the following installed:
+- **Node.js** (>= 16.x)
+- **Git**
+- **Yarn or npm**
 
-- Node.js (v16.x or higher)
-- npm (v8.x or higher)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone [your-repo-url]
-   cd loan-manager
+### Steps to Run Locally
+1. **Clone the repository**
+   ```sh
+   git clone https://github.com/sujallimje/manager.git
+   cd manager
    ```
-
-2. Install dependencies:
-   ```bash
-   npm install
+2. **Install dependencies**
+   ```sh
+   npm install  # or yarn install
    ```
-
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with the following variables:
+3. **Run the development server**
+   ```sh
+   npm run dev  # or yarn dev
    ```
-   NEXT_PUBLIC_API_URL=your_api_url
-   DATABASE_URL=your_database_url
-   ```
+4. **Access the application**
+   - Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+## Technologies Used
+- **Frontend:** Next.js, React.js, Tailwind CSS
+- **Backend:** Next.js API Routes, Node.js
+- **AI Processing:** OpenCV (for facial verification), Tesseract.js (for document OCR)
+- **Database:** MongoDB (optional, for storing loan applications)
+- **Deployment:** Vercel
 
-5. Build for production:
-   ```bash
-   npm run build
-   ```
+## Future Enhancements
+- Implement AI-powered chat/video assistant using NLP.
+- Add multilingual support with AI-generated voice responses.
+- Integrate with banking APIs for real-time loan approval processing.
 
-6. Start the production server:
-   ```bash
-   npm start
-   ```
+---
+Developed for a **48-hour Hackathon Challenge**.
 
-## Project Structure
-
-```
-loan-manager/
-├── components/     # Reusable UI components
-├── pages/          # Next.js pages and API routes
-├── public/         # Static assets
-├── styles/         # Global styles
-├── lib/            # Utility functions and hooks
-├── models/         # Data models
-└── config/         # Configuration files
-```
-
-## Deployment
-
-[Include instructions for deploying your application]
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-[Include your license information here]
-
-## Contact
-
-[Your contact information]
