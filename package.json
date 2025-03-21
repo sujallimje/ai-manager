@@ -12,6 +12,7 @@
     "@tensorflow-models/face-landmarks-detection": "^1.0.6",
     "@tensorflow/tfjs": "^4.22.0",
     "axios": "^1.8.3",
+    "firebase": "^11.5.0",
     "formidable": "^3.5.2",
     "next": "15.2.3",
     "react": "^19.0.0",

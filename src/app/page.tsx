@@ -2,11 +2,51 @@
 import { useRouter } from "next/navigation";
 import Head from 'next/head';
 import Image from 'next/image';
+import { useState, useEffect } from "react";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function Home() {
   const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+  
   const goToApplyPage = () => {
     router.push("/apply");
+  };
+  
+  const handleAuth = () => {
+    if (user) {
+      // Show confirmation dialog before logout
+      setShowConfirmation(true);
+    } else {
+      // Go to auth page
+      router.push("/auth");
+    }
+  };
+  
+  const confirmLogout = () => {
+    signOut(auth).then(() => {
+      // Successfully signed out
+      setShowConfirmation(false);
+    }).catch((error) => {
+      console.error("Error signing out:", error);
+      setShowConfirmation(false);
+    });
+  };
+  
+  const cancelLogout = () => {
+    setShowConfirmation(false);
   };
   
   return (
@@ -19,19 +59,50 @@ export default function Home() {
         />
       </Head>
       
+      {/* Logout Confirmation Dialog - Updated with backdrop blur */}
+      {showConfirmation && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Confirm Logout</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to log out from your account?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <img src="/logo.jpeg" alt="CapitalCue" width="40" height="40" />
             <span className="text-2xl font-bold text-blue-600">Capital</span>
             <span className="text-2xl font-bold text-green-500">Cue</span>
-
           </div>
-          <nav className="hidden md:flex space-x-8">
-            <a href="#" className="text-gray-600 hover:text-blue-600">About</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600">Loan Types</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600">Contact</a>
-          </nav>
+          <div className="flex items-center">
+            <nav className="hidden md:flex space-x-8 mr-4">
+              <a href="#" className="text-gray-600 hover:text-blue-600">About</a>
+              <a href="#" className="text-gray-600 hover:text-blue-600">Loan Types</a>
+              <a href="#" className="text-gray-600 hover:text-blue-600">Contact</a>
+            </nav>
+            <button
+              onClick={handleAuth}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-md"
+            >
+              {loading ? "Loading..." : user ? "Logout" : "Login"}
+            </button>
+          </div>
         </div>
       </header>
       
