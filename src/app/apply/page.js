@@ -17,7 +17,8 @@ export default function Apply() {
   const [applicationStatus, setApplicationStatus] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationComplete, setVerificationComplete] = useState(false);
-
+  const [loanStatus, setLoanStatus] = useState(null);
+  
   // Face monitoring state
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);

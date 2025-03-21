@@ -254,6 +254,16 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
         formattedData.fatherName = formattedData.father_name;
         delete formattedData.father_name;
       }
+    }
+    else if (docType === 'pan') {
+      if (formattedData.id_number) {
+        formattedData.panNumber = formattedData.id_number;
+        delete formattedData.id_number;
+      }
+      if (formattedData.father_name) {
+        formattedData.fatherName = formattedData.father_name;
+        delete formattedData.father_name;
+      }
     } else if (docType === 'income') {
       if (formattedData.monthly_income) {
         formattedData.monthlyIncome = formattedData.monthly_income;
@@ -311,13 +321,17 @@ const DocumentUpload = ({ documentType, onUpload, onExtract }) => {
   const getDocumentTitle = () => {
     switch (documentType) {
       case 'identity':
-        return 'Identity Proof (Aadhaar/PAN)';
+        return 'Identity Proof (Aadhaar Card)';
       case 'income':
         return 'Income Proof (Salary Slip/Form 16)';
+      case 'pan':
+        return 'PAN Card';
       case 'address':
         return 'Address Proof (Utility Bill/Rental Agreement)';
       case 'bank':
         return 'Bank Statement';
+      case 'collateral':
+        return 'Collateral Document';
       default:
         return 'Document Upload';
     }

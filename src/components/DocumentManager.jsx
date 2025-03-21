@@ -19,10 +19,9 @@ const DocumentManager = ({ onComplete }) => {
     "pan",
     "address",
     "income",
-    "bank",
-    "cibil",
-    "employment",
-    "property",
+    // "bank",
+    // "employment",
+    // "property",
     "collateral"
   ];
 
