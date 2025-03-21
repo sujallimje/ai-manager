@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import Webcam from "react-webcam";
 import DocumentManager from "../../components/DocumentManager";
-import ChatBot from "../../components/ChatBot"; // Import the ChatBot component
+import ChatBot from "../../components/ChatBot";
+import LoanQuestionnaire from "../../components/LoanQuestionnaire";
 
 
 export default function Apply() {
@@ -29,6 +30,7 @@ export default function Apply() {
   const countdownTimerRef = useRef(null);
   const consecutiveNoMovementFrames = useRef(0);
   const consecutiveDifferentPersonFrames = useRef(0);
+  const [loanAnswers, setLoanAnswers] = useState({});
 
   /// Start monitoring after verification
   useEffect(() => {
@@ -179,22 +181,16 @@ export default function Apply() {
   const submitApplication = () => {
     setIsVerifying(true);
 
-    // Simulated API call with realistic approval logic
     setTimeout(() => {
       setIsVerifying(false);
       setVerificationComplete(true);
 
-      // For testing only - remove this in production
       const monthlyIncome = extractedData.income?.monthlyIncome
         ? parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))
-        : 30000; // Default value for testing
-      const requestedAmount = parseFloat(loanAmount) || 0;
+        : 30000;
+      const requestedAmount = parseFloat(loanAnswers.loanAmount) || 0;
       const eligibilityRatio = requestedAmount / monthlyIncome;
 
-      // Approval criteria: 
-      // - Minimum income ₹25,000
-      // - Loan amount up to 10x monthly income
-      // - At least 3 documents verified
       const status = monthlyIncome >= 25000 &&
         eligibilityRatio <= 10 &&
         Object.keys(uploadedDocuments).length >= 3
@@ -239,11 +235,9 @@ export default function Apply() {
 
 
 
-  // Step titles for progress indicator
   const stepTitles = [
     "Identity Verification",
-    "Loan Information",
-    "Loan Details",
+    "Loan Application",
     "Documents",
     "Review",
     "Decision"
@@ -269,8 +263,8 @@ export default function Apply() {
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step > index ? 'bg-blue-600 text-white' :
-                      step === index + 1 ? 'bg-blue-100 border-2 border-blue-600 text-blue-600' :
-                        'bg-gray-200 text-gray-500'
+                    step === index + 1 ? 'bg-blue-100 border-2 border-blue-600 text-blue-600' :
+                      'bg-gray-200 text-gray-500'
                     }`}>
                     {index + 1}
                   </div>
@@ -405,151 +399,105 @@ export default function Apply() {
 
             {step === 2 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-blue-600 font-bold mb-4">
-                  Hello! I'm Rohan, your Virtual Branch Manager.
-                </h3>
-                <p className="text-gray-700 mb-6">
-                  I'll guide you through the loan application process. This will
-                  take just a few minutes. Let's get started!
-                </p>
-
-                <label className="block text-gray-800 font-medium mb-2">
-                  What type of loan are you interested in?
-                </label>
-                <select
-                  className="text-gray-800 w-full p-3 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors"
-                  onChange={(e) => setLoanType(e.target.value)}
-                  value={loanType}
-                >
-                  <option value="">Select Loan Type</option>
-                  <option value="personal">Personal Loan</option>
-                  <option value="home">Home Loan</option>
-                  <option value="business">Business Loan</option>
-                  <option value="education">Education Loan</option>
-                  <option value="vehicle">Vehicle Loan</option>
-                </select>
-
-                <div className="flex justify-between mt-6">
-                  <button
-                    onClick={handleBack}
-                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={!loanType}
-                    className={`px-6 py-2 rounded-lg text-white font-medium ${!loanType ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 transition-colors'
-                      }`}
-                  >
-                    Next
-                  </button>
+                <h3 className="text-xl text-blue-600 font-bold mb-4">Select Loan Type</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['personal', 'home', 'business', 'education', 'vehicle'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        setLoanType(type);
+                        handleNext();
+                      }}
+                      className="p-4 border rounded-lg hover:bg-blue-50 transition-colors text-left"
+                    >
+                      <h4 className="text-lg font-medium capitalize">{type} Loan</h4>
+                      <p className="text-sm text-gray-600 mt-2">
+                        {{
+                          personal: "For personal needs and expenses",
+                          home: "Home purchase or renovation",
+                          business: "Business expansion and growth",
+                          education: "Educational expenses",
+                          vehicle: "Vehicle purchase"
+                        }[type]}
+                      </p>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
 
             {step === 3 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-blue-600 font-bold mb-4">
-                  Tell us more about your loan requirements
-                </h3>
-
-                <div className="mb-6">
-                  <label className="block text-gray-800 font-medium mb-2">
-                    What is the purpose of this loan?
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Home renovation, Education fees, Medical expenses"
-                    className="w-full p-3 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors"
-                    value={loanPurpose}
-                    onChange={(e) => setLoanPurpose(e.target.value)}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-gray-800 font-medium mb-2">
-                    How much would you like to borrow?
-                  </label>
-                  <div className="text-gray-800 relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-600 font-medium">₹</span>
-                    <input
-                      type="number"
-                      placeholder="Enter amount"
-                      className="w-full p-3 text-gray-800 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors"
-                      value={loanAmount}
-                      onChange={(e) => setLoanAmount(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-between mt-6">
-                  <button
-                    onClick={handleBack}
-                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={!loanPurpose || !loanAmount}
-                    className={`px-6 py-2 rounded-lg text-white font-medium ${!loanPurpose || !loanAmount ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 transition-colors'
-                      }`}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+              <LoanQuestionnaire
+                loanType={loanType} // Make sure to pass loanType prop
+                onComplete={(answers) => {
+                  setLoanAnswers(answers);
+                  handleNext();
+                }}
+              />
             )}
 
+
             {step === 4 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <DocumentManager onComplete={handleDocumentsComplete} />
-              </div>
+              <DocumentManager onComplete={(docs, data) => {
+                setUploadedDocuments(docs);
+                setExtractedData(data);
+                handleNext();
+              }} />
             )}
 
             {step === 5 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-blue-600 font-bold mb-4">
-                  Review Your Application
-                </h3>
+                <h3 className="text-xl text-blue-600 font-bold mb-4">Review Your Application</h3>
+
+                <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">Application Summary</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
+                      <span className="text-gray-600">Loan Type:</span>
+                      <span className="font-medium text-gray-800 capitalize">{loanAnswers.loanType} Loan</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
+                      <span className="text-gray-600">Purpose:</span>
+                      <span className="font-medium text-gray-800">{loanAnswers.purpose || 'Not specified'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
+                      <span className="text-gray-600">Amount:</span>
+                      <span className="font-medium text-gray-800">
+                        ₹{Number(loanAnswers.loanAmount).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
+                      <span className="text-gray-600">Tenure:</span>
+                      <span className="font-medium text-gray-800">{loanAnswers.tenure || 'Not specified'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
+                      <span className="text-gray-600">Monthly Income:</span>
+                      <span className="font-medium text-gray-800">
+                        ₹{(extractedData.income?.monthlyIncome || '0').replace(/[^0-9.]/g, '')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Documents Submitted:</span>
+                      <span className="font-medium text-gray-800">
+                        {Object.keys(uploadedDocuments).length} files
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
                 {!isVerifying && !verificationComplete ? (
-                  <div>
-                    <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
-                      <h4 className="text-lg font-medium text-gray-800 mb-4">Application Summary</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between border-b border-gray-200 pb-2">
-                          <span className="text-gray-600">Loan Type:</span>
-                          <span className="font-medium text-gray-800">{loanType.charAt(0).toUpperCase() + loanType.slice(1)} Loan</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-2">
-                          <span className="text-gray-600">Purpose:</span>
-                          <span className="font-medium text-gray-800">{loanPurpose}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-2">
-                          <span className="text-gray-600">Amount:</span>
-                          <span className="font-medium text-gray-800">₹{Number(loanAmount).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Documents Submitted:</span>
-                          <span className="font-medium text-gray-800">{Object.keys(uploadedDocuments).length}</span>
-                        </div>
-                      </div>
-                    </div>
-
+                  <div className="space-y-4">
                     <button
                       onClick={submitApplication}
                       className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
                     >
                       Submit Application
                     </button>
-
                     <button
                       onClick={handleBack}
-                      className="w-full mt-4 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                      className="w-full px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                     >
-                      Go Back to Edit
+                      Go Back to Documents
                     </button>
                   </div>
                 ) : isVerifying ? (
@@ -559,9 +507,9 @@ export default function Apply() {
                     <p className="text-gray-500 mt-2">This will take just a moment</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center py-6">
+                  <div className="flex flex-col items-center">
                     <div className="bg-green-50 text-green-800 p-4 rounded-lg flex items-center mb-6 w-full border border-green-200">
-                      <svg className="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg className="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                       </svg>
                       <span className="text-green-800 font-medium">Application processed successfully!</span>
