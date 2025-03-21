@@ -1,0 +1,4 @@
+ERROR:root:Error processing C:\Users\kanis\Desktop\chartered_final\manager\tmp\37f5f900-596e-4113-a4b2-64bb92c8a8b3.jpg: C:\Users\Asus\Downloads\Tesseract-OCR\Tesseract-OCR\tesseract.exe is not installed or it's not in your PATH. See README file for more information.
+ERROR:root:Error processing C:\Users\kanis\Desktop\chartered_final\manager\tmp\d3f12c69-bcf4-4494-9609-395adb971603.jpg: [WinError 5] Access is denied
+ERROR:root:Error processing C:\Users\kanis\Desktop\chartered_final\manager\tmp\a71a8210-37cb-422a-a7e6-c032b2282720.pdf: OpenCV(4.6.0) D:\a\opencv-python\opencv-python\opencv\modules\imgproc\src\color.cpp:182: error: (-215:Assertion failed) !_src.empty() in function 'cv::cvtColor'
+
