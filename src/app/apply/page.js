@@ -5,6 +5,8 @@ import Webcam from "react-webcam";
 import DocumentManager from "../../components/DocumentManager";
 import ChatBot from "../../components/ChatBot";
 import LoanQuestionnaire from "../../components/LoanQuestionnaire";
+import EMICalculatorButton from "../../components/EMICalculator";
+import EMICalculator from "../../components/EMICalculatorButton";
 
 
 export default function Apply() {
@@ -615,6 +617,7 @@ export default function Apply() {
         </div>
       </div>
       <ChatBot />
+      <EMICalculator/>
     </div>
   );
 }
