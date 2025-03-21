@@ -5,7 +5,6 @@ import Webcam from "react-webcam";
 import DocumentManager from "../../components/DocumentManager";
 import ChatBot from "../../components/ChatBot"; // Import the ChatBot component
 
-
 export default function Apply() {
   const [step, setStep] = useState(1);
   const [loanType, setLoanType] = useState("");
@@ -19,16 +18,10 @@ export default function Apply() {
 
   // Face monitoring state
   const webcamRef = useRef(null);
-  const canvasRef = useRef(null);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
   const [countdown, setCountdown] = useState(null);
-  const lastMovementTime = useRef(Date.now());
-  const previousFrame = useRef(null);
-  const monitoringIntervalRef = useRef(null);
   const countdownTimerRef = useRef(null);
-  const consecutiveNoMovementFrames = useRef(0);
-  const consecutiveDifferentPersonFrames = useRef(0);
 
   /// Start monitoring after verification
   useEffect(() => {
@@ -37,128 +30,83 @@ export default function Apply() {
     }
 
     return () => {
-      if (monitoringIntervalRef.current) clearInterval(monitoringIntervalRef.current);
       if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
     };
   }, [verificationComplete, step]);
 
+  const intervalRef = useRef(null); // Store interval reference
+
   const startMonitoring = () => {
-    // Create a canvas element for frame analysis
-    if (!canvasRef.current) {
-      const canvas = document.createElement("canvas");
-      canvas.width = 320;
-      canvas.height = 240;
-      canvasRef.current = canvas;
-    }
-
     console.log("Starting webcam monitoring");
-
-    monitoringIntervalRef.current = setInterval(() => {
+  
+    if (intervalRef.current) clearInterval(intervalRef.current); // Clear old intervals
+  
+    intervalRef.current = setInterval(() => {
       if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
         checkUserPresence();
       }
-    }, 1000);
+    }, 3000); // Runs every 3 seconds
+     // Reduce API calls to every 2 seconds (less load)
+  
+    return () => clearInterval(intervalRef.current);
   };
-
-  const checkUserPresence = () => {
-    const video = webcamRef.current.video;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
-
-    // Draw current video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Get image data from canvas
-    const currentFrame = context.getImageData(0, 0, canvas.width, canvas.height);
-    const currentImageData = currentFrame.data;
-
-    if (!previousFrame.current) {
-      // First frame, store it as reference
-      previousFrame.current = currentFrame;
+  
+  const checkUserPresence = async () => {
+    if (!webcamRef.current || !webcamRef.current.getScreenshot) {
+      console.warn("Webcam not ready, skipping face detection...");
       return;
     }
-
-    const previousImageData = previousFrame.current.data;
-    let significantDiffPixels = 0;
-
-    // Adjusted thresholds
-    let diffThreshold = 50; // Increased from 30 to 50 to reduce sensitivity to lighting changes
-    let majorChangeThreshold = canvas.width * canvas.height * 0.25; // Increased from 15% to 25% of pixels
-    let movementThreshold = canvas.width * canvas.height * 0.01; // 1% of pixels showing movement
-    let requiredFramesForChange = 5; // Increased from 3 to 5 consecutive frames for confirmation
-
-    // Compare pixels to detect movement
-    for (let i = 0; i < currentImageData.length; i += 4) {
-      const rDiff = Math.abs(currentImageData[i] - previousImageData[i]);
-      const gDiff = Math.abs(currentImageData[i + 1] - previousImageData[i + 1]);
-      const bDiff = Math.abs(currentImageData[i + 2] - previousImageData[i + 2]);
-
-      if (rDiff > diffThreshold || gDiff > diffThreshold || bDiff > diffThreshold) {
-        significantDiffPixels++;
-      }
-    }
-
-    const currentTime = Date.now();
-
-    // Check for major changes that might indicate a different person
-    if (significantDiffPixels > majorChangeThreshold) {
-      consecutiveDifferentPersonFrames.current++;
-
-      if (consecutiveDifferentPersonFrames.current >= requiredFramesForChange && !showWarning) {
-        setWarningMessage("Warning: Different person detected. This is not allowed during the application process.");
+  
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
+  
+    const base64Data = imageSrc.split(",")[1];
+  
+    try {
+      const response = await fetch("/api/face-detection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Data }),
+      });
+  
+      if (!response.ok) throw new Error("API responded with an error");
+  
+      const result = await response.json();
+  
+      if (result.status === "warning") {
+        setWarningMessage(result.message);
         setShowWarning(true);
         startCountdown();
-      }
-    } else {
-      consecutiveDifferentPersonFrames.current = 0;
-    }
-
-    // Check if there's movement
-    if (significantDiffPixels > movementThreshold) {
-      lastMovementTime.current = currentTime;
-      consecutiveNoMovementFrames.current = 0;
-
-      if (showWarning && warningMessage.includes("No movement detected")) {
+      } else {
         setShowWarning(false);
         clearCountdown();
       }
-    } else {
-      consecutiveNoMovementFrames.current++;
-
-      if (consecutiveNoMovementFrames.current >= 4 && !showWarning) {
-        const timeWithoutMovement = currentTime - lastMovementTime.current;
-
-        if (timeWithoutMovement > 4000) {
-          setWarningMessage("Warning: No movement detected. Are you still there? Session may end if you don't return.");
-          setShowWarning(true);
-          startCountdown();
-        }
-      }
+    } catch (error) {
+      console.error("Face detection API failed:", error);
+      setWarningMessage("Face detection is temporarily unavailable. Please try again later.");
+      setShowWarning(true);
     }
-
-    // Update previous frame reference
-    previousFrame.current = currentFrame;
   };
+  
+  
 
   const startCountdown = () => {
-    setCountdown(10); // 10 seconds until session ends
-
-    if (countdownTimerRef.current) {
-      clearInterval(countdownTimerRef.current);
-    }
-
+    if (countdownTimerRef.current) return; // Prevent multiple countdowns
+  
+    setCountdown(10);
     countdownTimerRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(countdownTimerRef.current);
-          window.location.href = "/session-ended";
+          countdownTimerRef.current = null; // Reset reference
+          window.location.href = "/";
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
   };
-
+  
   const clearCountdown = () => {
     if (countdownTimerRef.current) {
       clearInterval(countdownTimerRef.current);
