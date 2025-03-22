@@ -3,12 +3,12 @@ import { useRouter } from "next/navigation";
 import Head from 'next/head';
 import Image from 'next/image';
 import { useState, useEffect } from "react";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { signOut, onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 export default function Home() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
   
@@ -17,7 +17,7 @@ export default function Home() {
       setUser(currentUser);
       setLoading(false);
     });
-    
+
     return () => unsubscribe();
   }, []);
   

@@ -5,6 +5,14 @@ import Webcam from "react-webcam";
 import DocumentManager from "../../components/DocumentManager";
 import ChatBot from "../../components/ChatBot";
 import LoanQuestionnaire from "../../components/LoanQuestionnaire";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
+
+const DetailItem = ({ label, value }) => (
+  <div className="bg-gray-50 p-3 rounded-lg">
+    <dt className="text-sm font-medium text-gray-500">{label}</dt>
+    <dd className="mt-1 text-gray-800 break-words">{value || 'Not provided'}</dd>
+  </div>
+);
 
 
 export default function Apply() {
@@ -18,7 +26,8 @@ export default function Apply() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationComplete, setVerificationComplete] = useState(false);
   const [loanStatus, setLoanStatus] = useState(null);
-  
+  const [aiDecision, setAiDecision] = useState(null);
+
   // Face monitoring state
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
@@ -32,6 +41,91 @@ export default function Apply() {
   const consecutiveNoMovementFrames = useRef(0);
   const consecutiveDifferentPersonFrames = useRef(0);
   const [loanAnswers, setLoanAnswers] = useState({});
+
+  async function getGroqAssessment(applicationData) {
+    const apiKey = "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";
+    
+  
+    if (!apiKey) {
+      console.error("Missing Groq API key");
+      return {
+        approvalStatus: "error",
+        reasons: ["API key missing"],
+        interestRate: "N/A",
+        conditions: ["Please check API credentials"],
+        summary: "AI assessment could not be performed due to missing API key",
+      };
+    }
+  
+    const prompt = `
+    Analyze this loan application and provide a detailed assessment:
+    
+    Applicant Details:
+    - Name: ${applicationData.answers.fullName || 'Not provided'}
+    - Date of Birth: ${applicationData.answers.dob || 'Not provided'}
+    - Employment: ${applicationData.answers.employmentStatus || 'Not provided'}
+    - Monthly Income: ${applicationData.extracted.income || 'Not provided'}
+    
+    Loan Request:
+    - Type: ${applicationData.loanType}
+    - Amount: ₹${applicationData.answers.loanAmount}
+    - Purpose: ${applicationData.answers.purpose || 'Not specified'}
+    - Tenure: ${applicationData.answers.tenure || 'Not specified'}
+    
+    Documents Verified:
+    ${applicationData.documents.length > 0
+        ? applicationData.documents.join('\n- ')
+        : 'No documents uploaded'}
+  
+    Provide JSON response with:
+    1. approvalStatus: "approved" or "rejected"
+    2. reasons: array of 3 key factors
+    3. interestRate: appropriate rate based on risk
+    4. conditions: any special conditions
+    5. summary: 50-word explanation
+    `;
+  
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          model: "llama-3.3-70b-versatile",
+          response_format: { type: "json_object" },
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      return data.choices[0].message.content
+        ? JSON.parse(data.choices[0].message.content)
+        : {
+            approvalStatus: "error",
+            reasons: ["Invalid response format"],
+            interestRate: "N/A",
+            conditions: ["Unexpected API response"],
+            summary: "AI assessment failed due to an invalid response format",
+          };
+    } catch (error) {
+      console.error("Groq API Error:", error);
+      return {
+        approvalStatus: "error",
+        reasons: ["AI assessment failed"],
+        interestRate: "N/A",
+        conditions: ["Please contact support"],
+        summary: "Unable to process AI assessment",
+      };
+    }
+  }
+  
+
 
   /// Start monitoring after verification
   useEffect(() => {
@@ -179,41 +273,43 @@ export default function Apply() {
     handleNext();
   };
 
-  const submitApplication = () => {
+  const submitApplication = async () => {
     setIsVerifying(true);
-
-    setTimeout(() => {
-      setIsVerifying(false);
+  
+    try {
+      // Prepare application data
+      const applicationData = {
+        loanType,
+        answers: loanAnswers,
+        extracted: extractedData,
+        documents: Object.keys(uploadedDocuments)
+      };
+  
+      // Get AI assessment
+      const aiDecision = await getGroqAssessment(applicationData);
+  
+      setApplicationStatus(aiDecision.approvalStatus);
       setVerificationComplete(true);
-
-      const monthlyIncome = extractedData.income?.monthlyIncome
-        ? parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))
-        : 30000;
-      const requestedAmount = parseFloat(loanAnswers.loanAmount) || 0;
-      const eligibilityRatio = requestedAmount / monthlyIncome;
-
-      const status = monthlyIncome >= 25000 &&
-        eligibilityRatio <= 10 &&
-        Object.keys(uploadedDocuments).length >= 3
-        ? "approved"
-        : "rejected";
-
-      setApplicationStatus(status);
-    }, 3000);
+      setAiDecision(aiDecision);
+      
+      // Add this line to advance to the next step:
+      handleNext();
+  
+    } catch (error) {
+      console.error("Submission failed:", error);
+      setApplicationStatus("error");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const verifyIdentity = () => {
     setIsVerifying(true);
-
+    
     // Simulate verification process
     setTimeout(() => {
       setIsVerifying(false);
       setVerificationComplete(true);
-
-      // Auto-advance after verification
-      setTimeout(() => {
-        handleNext();
-      }, 1000);
     }, 3000);
   };
 
@@ -448,169 +544,167 @@ export default function Apply() {
 
             {step === 5 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl text-blue-600 font-bold mb-4">Review Your Application</h3>
+                <h3 className="text-2xl font-bold text-blue-600 mb-6">Application Summary</h3>
 
-                <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
-                  <h4 className="text-lg font-medium text-gray-800 mb-4">Application Summary</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-600">Loan Type:</span>
-                      <span className="font-medium text-gray-800 capitalize">{loanAnswers.loanType} Loan</span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-600">Purpose:</span>
-                      <span className="font-medium text-gray-800">{loanAnswers.purpose || 'Not specified'}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-600">Amount:</span>
-                      <span className="font-medium text-gray-800">
-                        ₹{Number(loanAnswers.loanAmount).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-600">Tenure:</span>
-                      <span className="font-medium text-gray-800">{loanAnswers.tenure || 'Not specified'}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-600">Monthly Income:</span>
-                      <span className="font-medium text-gray-800">
-                        ₹{(extractedData.income?.monthlyIncome || '0').replace(/[^0-9.]/g, '')}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Documents Submitted:</span>
-                      <span className="font-medium text-gray-800">
-                        {Object.keys(uploadedDocuments).length} files
-                      </span>
-                    </div>
+                {/* Personal Details Section */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Personal Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <DetailItem label="Full Name" value={loanAnswers?.fullName} />
+                    <DetailItem label="Date of Birth" value={loanAnswers?.dob} />
+                    <DetailItem label="Contact Info" value={`${loanAnswers?.contact?.phone || ''} ${loanAnswers?.contact?.email || ''}`} />
+                    <DetailItem label="Employment Status" value={loanAnswers?.employmentStatus} />
+                    <DetailItem label="Monthly Income" value={`₹${Number(extractedData?.income?.monthlyIncome?.replace(/[^0-9.]/g, '')).toLocaleString('en-IN')}`} />
+                    <DetailItem label="Credit Score" value={loanAnswers?.creditScore || 'Not provided'} />
                   </div>
                 </div>
 
-                {!isVerifying && !verificationComplete ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={submitApplication}
-                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-                    >
-                      Submit Application
-                    </button>
-                    <button
-                      onClick={handleBack}
-                      className="w-full px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                    >
-                      Go Back to Documents
-                    </button>
+                {/* Loan Details Section */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Loan Request</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <DetailItem label="Loan Type" value={`${loanType.charAt(0).toUpperCase() + loanType.slice(1)} Loan`} />
+                    <DetailItem label="Requested Amount" value={`₹${Number(loanAnswers?.loanAmount).toLocaleString('en-IN')}`} />
+                    <DetailItem label="Loan Purpose" value={loanAnswers?.purpose} />
+                    <DetailItem label="Preferred Tenure" value={`${loanAnswers?.tenure} months`} />
                   </div>
-                ) : isVerifying ? (
-                  <div className="flex flex-col items-center py-12">
-                    <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-blue-600 mb-6"></div>
-                    <p className="text-gray-700 text-lg font-medium">Processing your application...</p>
-                    <p className="text-gray-500 mt-2">This will take just a moment</p>
+                </div>
+
+                {/* Document Verification Section */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Document Verification</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <DetailItem label="Documents Uploaded" value={`${Object.keys(uploadedDocuments || {}).length} files`} />
+                    <DetailItem label="Income Verified" value={extractedData?.income ? 'Yes' : 'No'} />
+                    <DetailItem label="ID Proof Verified" value={extractedData?.idProof ? 'Yes' : 'No'} />
+                    <DetailItem label="Address Proof Verified" value={extractedData?.addressProof ? 'Yes' : 'No'} />
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <div className="bg-green-50 text-green-800 p-4 rounded-lg flex items-center mb-6 w-full border border-green-200">
-                      <svg className="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span className="text-green-800 font-medium">Application processed successfully!</span>
-                    </div>
-                    <button
-                      onClick={handleNext}
-                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-                    >
-                      View Loan Decision
-                    </button>
-                  </div>
-                )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4 mt-8">
+                  <button
+                    onClick={handleBack}
+                    className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                  >
+                    Edit Application
+                  </button>
+                  <button
+                    onClick={submitApplication}
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Submit for Approval
+                  </button>
+                </div>
               </div>
             )}
 
-            {step === 6 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                {applicationStatus === "approved" ? (
-                  <div>
-                    <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center bg-green-100 rounded-full p-4 mb-4">
-                        <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                      </div>
-                      <h3 className="text-2xl font-bold text-green-600 mb-2">
-                        Congratulations!
-                      </h3>
-                      <p className="text-xl text-gray-700">
-                        Your loan application has been approved.
-                      </p>
-                    </div>
 
-                    <div className="bg-green-50 p-6 rounded-lg mb-6 border border-green-200">
-                      <h4 className="text-lg font-medium text-gray-800 mb-3">Approval Details</h4>
-                      <div className="space-y-2">
-                        <p className="text-gray-700">
-                          <strong>Approved Amount:</strong> ₹{Number(loanAmount).toLocaleString()}
-                        </p>
-                        <p className="text-gray-700">
-                          <strong>Interest Rate:</strong> 12.5% p.a.
-                        </p>
-                        <p className="text-gray-700">
-                          <strong>Reason for Approval:</strong> Met all eligibility criteria including income requirements and document verification.
-                        </p>
-                      </div>
-                    </div>
+{step === 6 && (
+  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    {/* Decision Header */}
+    <div className="text-center mb-8">
+      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${aiDecision?.approvalStatus === 'approved' ? 'bg-green-100' : 'bg-red-100'}`}>
+        {aiDecision?.approvalStatus === 'approved' ? (
+          <CheckIcon className="w-8 h-8 text-green-600" />
+        ) : (
+          <XMarkIcon className="w-8 h-8 text-red-600" />
+        )}
+      </div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        {aiDecision?.approvalStatus === 'approved'
+          ? 'Congratulations! Loan Approved'
+          : 'Application Requires Review'}
+      </h2>
+      <p className="text-gray-600">{aiDecision?.summary}</p>
+    </div>
 
-                    <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
-                        Download Approval Letter
-                      </button>
-                      <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-medium">
-                        View Repayment Schedule
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center bg-red-100 rounded-full p-4 mb-4">
-                        <svg className="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                      </div>
-                      <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                        Application Not Approved
-                      </h3>
-                      <p className="text-gray-600">
-                        We're unable to approve your loan application at this time.
-                      </p>
-                    </div>
+    {/* AI Analysis Section */}
+    <div className="space-y-6">
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-blue-800 mb-3">Key Decision Factors</h3>
+        <ul className="list-disc pl-6 space-y-2">
+          {aiDecision?.reasons && Array.isArray(aiDecision.reasons) 
+            ? aiDecision.reasons.map((reason, index) => (
+                <li key={index} className="text-gray-700">{reason}</li>
+              ))
+            : <li className="text-gray-700">Decision analysis not available</li>
+          }
+        </ul>
+      </div>
 
-                    <div className="bg-red-50 p-6 rounded-lg mb-6 border border-red-200">
-                      <h4 className="text-lg font-medium text-gray-800 mb-3">Rejection Reasons</h4>
-                      <ul className="list-disc pl-6 space-y-2">
-                        <li className="text-gray-700">
-                          Income-to-loan ratio ({extractedData.income?.monthlyIncome ? (Number(loanAmount) / parseFloat(extractedData.income.monthlyIncome.replace(/[^0-9.]/g, ''))).toFixed(1) : 'N/A'}x) exceeds maximum allowed limit (10x)
-                        </li>
-                        <li className="text-gray-700">
-                          {Object.keys(uploadedDocuments).length < 3 ? 'Insufficient documents submitted' : 'Document verification issues'}
-                        </li>
-                        <li className="text-gray-700">
-                          Credit history not meeting our current criteria
-                        </li>
-                      </ul>
-                    </div>
+      {aiDecision?.approvalStatus === 'approved' ? (
+        <div className="bg-green-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-green-800 mb-3">Loan Offer Details</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <DetailItem label="Approved Amount" value={`₹${Number(loanAnswers.loanAmount).toLocaleString('en-IN')}`} />
+            <DetailItem label="Interest Rate" value={`${aiDecision?.interestRate || 'N/A'}% p.a.`} />
+            <DetailItem label="Loan Tenure" value={`${loanAnswers?.tenure || 'N/A'} months`} />
+            <DetailItem label="Processing Fee" value="Standard fees apply" />
+          </div>
+        </div>
+      ) : (
+        <div className="bg-red-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-red-800 mb-3">Improvement Suggestions</h3>
+          <ul className="list-disc pl-6 space-y-2">
+            {aiDecision?.reasons && Array.isArray(aiDecision.reasons) 
+              ? aiDecision.reasons.map((reason, index) => (
+                  <li key={index} className="text-gray-700">{reason}</li>
+                ))
+              : <li className="text-gray-700">Please contact a loan officer for assistance</li>
+            }
+          </ul>
+        </div>
+      )}
 
-                    <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
-                        Speak to Loan Officer
-                      </button>
-                      <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">
-                        Try Different Amount
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Next Steps</h3>
+        <div className="space-y-2">
+          <p className="text-gray-700">
+            {aiDecision?.approvalStatus === 'approved' 
+              ? "Review and accept the loan offer to proceed." 
+              : "Contact our loan officers for assistance with your application."}
+          </p>
+          {aiDecision?.conditions && (
+            <div className="mt-3">
+              <p className="text-sm font-medium text-gray-600">Special Conditions:</p>
+              <ul className="list-disc pl-6 mt-1">
+                {(Array.isArray(aiDecision.conditions) 
+                  ? aiDecision.conditions 
+                  : [aiDecision.conditions]).map((condition, index) => (
+                    <li key={index} className="text-gray-700">{condition}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Action Buttons */}
+    <div className="mt-8 flex gap-4">
+      {aiDecision?.approvalStatus === 'approved' ? (
+        <>
+          <button className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
+            Accept Offer
+          </button>
+          <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50">
+            Download Sanction Letter
+          </button>
+        </>
+      ) : (
+        <>
+          <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+            Speak to Officer
+          </button>
+          <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50">
+            Modify Application
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+)}
           </div>
         </div>
       </div>
