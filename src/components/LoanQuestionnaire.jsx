@@ -6,12 +6,12 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
   const [answers, setAnswers] = useState({});
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recognitionRef = useRef(null);
   const audioChunksRef = useRef([]);
   const [showReview, setShowReview] = useState(false);
+  const [inputMethod, setInputMethod] = useState("text"); // Default to text input
 
   // Loan type information to display
   const loanInfo = {
@@ -63,19 +63,19 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
       { id: "fullName", text: "Great! Let's start with some basic details. What's your full name?", type: "text" },
       { id: "dob", text: "And your date of birth?", type: "text" },
       { id: "contact", text: "Perfect. Could you also share your contact number and email address?", type: "text" },
-      // { id: "address", text: "Thanks! Now, what's your current residential address?", type: "text" },
+      { id: "address", text: "Thanks! Now, what's your current residential address?", type: "text" },
       { id: "loanAmount", text: "Alright, now let's talk about your loan needs. How much loan amount are you looking for?", type: "text" },
       { id: "purpose", text: `Got it. What's the purpose of this ${type} loan?`, type: "text" },
-      { id: "tenure", text: "That makes sense. And how long would you like the loan for? Are you thinking of a tenure like 24 months, 10years, or something else?", type: "text" },
+      { id: "tenure", text: "That makes sense. And how long would you like the loan for? Are you thinking of a tenure like 12 months, 24 months, or something else?", type: "text" },
       { id: "employmentStatus", text: "Understood! Now, let's go over your employment details. Are you currently employed or self-employed?", type: "text" },
       { id: "employmentDetails", text: "If employed, could you tell me your job title and company name? If self-employed, what type of business do you run?", type: "text" },
       { id: "income", text: "Thanks! And what's your approximate monthly or annual income?", type: "text" },
       { id: "existingLoans", text: "Got it. Do you have any existing loans or financial commitments that we should consider?", type: "text" },
-      // { id: "bankAccount", text: "Alright. Let's check a few more details. Do you have an active bank account?", type: "text" },
+      { id: "bankAccount", text: "Alright. Let's check a few more details. Do you have an active bank account?", type: "text" },
       { id: "creditScore", text: "Do you happen to know your credit score?", type: "text" },
-      // { id: "defaults", text: "Have you ever faced any loan defaults or financial issues in the past?", type: "text" },
-      { id: "guarantors", text: " Now please fill details of guarantors for this loan?", type: "text" },
-      // { id: "updates", text: "That's helpful to know. Lastly, would you like to receive loan-related updates via SMS or email?", type: "text" }
+      { id: "defaults", text: "Have you ever faced any loan defaults or financial issues in the past?", type: "text" },
+      { id: "guarantors", text: "No problem, I just needed to ask. Now, do you have any guarantors or co-applicants for this loan?", type: "text" },
+      { id: "updates", text: "That's helpful to know. Lastly, would you like to receive loan-related updates via SMS or email?", type: "text" }
     ];
 
     // Add loan-specific questions
@@ -181,6 +181,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
   const startRecording = () => {
     setTranscript("");
     setIsRecording(true);
+    setInputMethod("voice");
     
     if (recognitionRef.current) {
       recognitionRef.current.start();
@@ -194,11 +195,8 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
     
     setIsRecording(false);
     
-    // After stopping recording, enable edit mode
+    // Save the answer
     if (transcript) {
-      setIsEditing(true);
-      
-      // Save the answer
       const currentQuestion = questions[currentQuestionIndex];
       setAnswers(prev => ({
         ...prev,
@@ -207,10 +205,11 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
     }
   };
 
-  const handleTranscriptChange = (e) => {
+  const handleInputChange = (e) => {
     setTranscript(e.target.value);
+    setInputMethod("text");
     
-    // Update the answers as user types
+    // Save the answer as user types
     const currentQuestion = questions[currentQuestionIndex];
     setAnswers(prev => ({
       ...prev,
@@ -218,14 +217,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
     }));
   };
 
-  const handleSaveEdit = () => {
-    setIsEditing(false);
-  };
-
   const handleNextQuestion = () => {
-    // Make sure editing is finished before moving on
-    setIsEditing(false);
-    
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
       setTranscript("");
@@ -236,9 +228,6 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
   };
 
   const handlePreviousQuestion = () => {
-    // Make sure editing is finished before moving back
-    setIsEditing(false);
-    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prevIndex => prevIndex - 1);
       // Restore previous answer if available
@@ -254,6 +243,16 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
   const handleComplete = () => {
     onComplete(answers); // This connects back to page.js
   };
+
+  // Set input method when navigating between questions
+  useEffect(() => {
+    const currentQuestion = questions[currentQuestionIndex];
+    if (currentQuestion && answers[currentQuestion.id]) {
+      setTranscript(answers[currentQuestion.id]);
+    } else {
+      setTranscript("");
+    }
+  }, [currentQuestionIndex]);
 
   const currentQuestion = questions[currentQuestionIndex] || {};
 
@@ -304,7 +303,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
 
         <button
           onClick={handleNextQuestion}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+          className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
         >
           Let's Begin
         </button>
@@ -332,13 +331,13 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
         <div className="flex space-x-4">
           <button
             onClick={() => setShowConfirmation(false)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+            className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
           >
             Edit Responses
           </button>
           <button
             onClick={handleComplete}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
           >
             Confirm & Continue
           </button>
@@ -370,86 +369,96 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <h3 className="text-lg text-gray-800 font-medium mb-4">
+          <h3 className="text-lg text-gray-800 font-medium mb-6">
             {currentQuestion.text}
           </h3>
 
-          <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200 min-h-20">
-            {isEditing ? (
-              <textarea
-                className="w-full h-32 p-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={transcript}
-                onChange={handleTranscriptChange}
-                placeholder="Edit your response here..."
-              />
-            ) : transcript ? (
-              <p className="text-gray-800">{transcript}</p>
-            ) : (
-              <p className="text-gray-400 italic">Your response will appear here...</p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            {isEditing ? (
-              <button
-                onClick={handleSaveEdit}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm flex items-center justify-center"
+          {/* Input Method Switch */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+              <button 
+                onClick={() => setInputMethod("text")}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${inputMethod === "text" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:bg-gray-200"}`}
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Save Changes
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+                  </svg>
+                  Type
+                </span>
               </button>
-            ) : !isRecording ? (
-              <button
-                onClick={startRecording}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm flex items-center justify-center"
+              <button 
+                onClick={() => setInputMethod("voice")}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${inputMethod === "voice" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:bg-gray-200"}`}
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-                </svg>
-                Start Recording
-              </button>
-            ) : (
-              <button
-                onClick={stopRecording}
-                className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium shadow-sm flex items-center justify-center animate-pulse"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
-                </svg>
-                Stop Recording
-              </button>
-            )}
-          </div>
-
-          {  !isRecording && !isEditing && (
-            <div className="mb-4">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="w-full border border-blue-500 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors font-medium flex items-center justify-center"
-              >
-                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                </svg>
-                Edit Response
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                  </svg>
+                  Speak
+                </span>
               </button>
             </div>
+          </div>
+
+          {inputMethod === "text" ? (
+            <div className="mb-6">
+              <textarea
+                value={transcript}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg p-4 min-h-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-800"
+                placeholder="Type your answer here..."
+              ></textarea>
+            </div>
+          ) : (
+            <>
+              <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200 min-h-20">
+                {transcript ? (
+                  <p className="text-gray-800">{transcript}</p>
+                ) : (
+                  <p className="text-gray-400 italic">Your voice response will appear here...</p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                {!isRecording ? (
+                  <button
+                    onClick={startRecording}
+                    className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm flex items-center justify-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                    </svg>
+                    Start Recording
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopRecording}
+                    className="w-full bg-red-600 text-white px-6 py-4 rounded-lg hover:bg-red-700 transition-colors font-medium shadow-sm flex items-center justify-center animate-pulse"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+                    </svg>
+                    Stop Recording
+                  </button>
+                )}
+              </div>
+            </>
           )}
 
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-between">
             <button
               onClick={handlePreviousQuestion}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
               disabled={currentQuestionIndex <= 1}
             >
               Back
             </button>
             <button
               onClick={handleNextQuestion}
-              className={`px-4 py-2 rounded-lg text-white font-medium ${transcript ? 'bg-blue-600 hover:bg-blue-700 transition-colors' : 'bg-blue-300 cursor-not-allowed'}`}
-              disabled={!transcript || isEditing}
+              className={`px-6 py-2 rounded-lg text-white font-medium ${transcript ? 'bg-blue-600 hover:bg-blue-700 transition-colors' : 'bg-blue-300 cursor-not-allowed'}`}
+              disabled={!transcript}
             >
               Next
             </button>
