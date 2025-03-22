@@ -63,7 +63,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
       { id: "fullName", text: "Great! Let's start with some basic details. What's your full name?", type: "text" },
       { id: "dob", text: "And your date of birth?", type: "text" },
       { id: "contact", text: "Perfect. Could you also share your contact number and email address?", type: "text" },
-      { id: "address", text: "Thanks! Now, what's your current residential address?", type: "text" },
+      // { id: "address", text: "Thanks! Now, what's your current residential address?", type: "text" },
       { id: "loanAmount", text: "Alright, now let's talk about your loan needs. How much loan amount are you looking for?", type: "text" },
       { id: "purpose", text: `Got it. What's the purpose of this ${type} loan?`, type: "text" },
       { id: "tenure", text: "That makes sense. And how long would you like the loan for? Are you thinking of a tenure like 24 months, 10years, or something else?", type: "text" },
@@ -71,11 +71,11 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
       { id: "employmentDetails", text: "If employed, could you tell me your job title and company name? If self-employed, what type of business do you run?", type: "text" },
       { id: "income", text: "Thanks! And what's your approximate monthly or annual income?", type: "text" },
       { id: "existingLoans", text: "Got it. Do you have any existing loans or financial commitments that we should consider?", type: "text" },
-      { id: "bankAccount", text: "Alright. Let's check a few more details. Do you have an active bank account?", type: "text" },
+      // { id: "bankAccount", text: "Alright. Let's check a few more details. Do you have an active bank account?", type: "text" },
       { id: "creditScore", text: "Do you happen to know your credit score?", type: "text" },
-      { id: "defaults", text: "Have you ever faced any loan defaults or financial issues in the past?", type: "text" },
+      // { id: "defaults", text: "Have you ever faced any loan defaults or financial issues in the past?", type: "text" },
       { id: "guarantors", text: " Now please fill details of guarantors for this loan?", type: "text" },
-      { id: "updates", text: "That's helpful to know. Lastly, would you like to receive loan-related updates via SMS or email?", type: "text" }
+      // { id: "updates", text: "That's helpful to know. Lastly, would you like to receive loan-related updates via SMS or email?", type: "text" }
     ];
 
     // Add loan-specific questions
@@ -424,7 +424,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
             )}
           </div>
 
-          {transcript && !isRecording && !isEditing && (
+          {  !isRecording && !isEditing && (
             <div className="mb-4">
               <button
                 onClick={() => setIsEditing(true)}

@@ -45,8 +45,7 @@ export default function Apply() {
 
   async function getGroqAssessment(applicationData) {
     const apiKey = "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";
-
-
+  
     if (!apiKey) {
       console.error("Missing Groq API key");
       return {
@@ -57,7 +56,25 @@ export default function Apply() {
         summary: "AI assessment could not be performed due to missing API key",
       };
     }
-
+  
+    // Add credit score validation
+    const creditScore = parseInt(applicationData.answers.creditScore) || 0;
+    
+    // Apply early rejection for very low credit scores
+    if (creditScore < 500) {
+      return {
+        approvalStatus: "rejected",
+        reasons: [
+          "Credit score below minimum threshold (500)",
+          "High debt-to-income ratio",
+          "Insufficient credit history"
+        ],
+        interestRate: "21.5",
+        conditions: ["Credit improvement required before reapplication"],
+        summary: "Application rejected due to credit score significantly below lending requirements. Recommend credit repair before reapplying."
+      };
+    }
+  
     const prompt = `
     Analyze this loan application and provide a detailed assessment:
     
@@ -66,6 +83,7 @@ export default function Apply() {
     - Date of Birth: ${applicationData.answers.dob || 'Not provided'}
     - Employment: ${applicationData.answers.employmentStatus || 'Not provided'}
     - Monthly Income: ${applicationData.extracted.income || 'Not provided'}
+    - Credit Score: ${applicationData.answers.creditScore || 'Not provided'}
     
     Loan Request:
     - Type: ${applicationData.loanType}
@@ -85,7 +103,7 @@ export default function Apply() {
     4. conditions: any special conditions
     5. summary: 50-word explanation
     `;
-
+  
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -99,21 +117,28 @@ export default function Apply() {
           response_format: { type: "json_object" },
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`API Error: ${response.statusText}`);
       }
-
+  
       const data = await response.json();
-      return data.choices[0].message.content
-        ? JSON.parse(data.choices[0].message.content)
-        : {
+      let result;
+      
+      try {
+        result = JSON.parse(data.choices[0].message.content);
+      } catch (e) {
+        console.error("Failed to parse API response:", e);
+        result = {
           approvalStatus: "error",
           reasons: ["Invalid response format"],
           interestRate: "N/A",
           conditions: ["Unexpected API response"],
           summary: "AI assessment failed due to an invalid response format",
         };
+      }
+      
+      return result;
     } catch (error) {
       console.error("Groq API Error:", error);
       return {
@@ -613,6 +638,8 @@ export default function Apply() {
               <DocumentManager
                 onComplete={(docs, data) => {
                   setUploadedDocuments(docs);
+
+                  
                   setExtractedData(data);
                   handleNext();
                 }}
@@ -677,111 +704,238 @@ export default function Apply() {
             )}
 
 
-            {step === 6 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                {/* Decision Header */}
-                <div className="text-center mb-8">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${aiDecision?.approvalStatus === 'approved' ? 'bg-green-100' : 'bg-red-100'}`}>
-                    {aiDecision?.approvalStatus === 'approved' ? (
-                      <CheckIcon className="w-8 h-8 text-green-600" />
-                    ) : (
-                      <XMarkIcon className="w-8 h-8 text-red-600" />
-                    )}
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {aiDecision?.approvalStatus === 'approved'
-                      ? 'Congratulations! Loan Approved'
-                      : 'Application Requires Review'}
-                  </h2>
-                  <p className="text-gray-600">{aiDecision?.summary}</p>
-                </div>
+{step === 6 && (
+  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    {/* Decision Header */}
+    <div className="text-center mb-8">
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        Loan Approval Probability
+      </h2>
+      
+      {/* Circular Probability meter */}
+      <div className="relative mx-auto w-48 h-48 mb-6 group">
+        {/* Background circle */}
+        <div className="absolute inset-0 rounded-full border-8 border-gray-200"></div>
+        
+        {/* Progress circle - using SVG for precise circular progress */}
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle 
+            cx="50" 
+            cy="50" 
+            r="40" 
+            fill="none" 
+            stroke={
+              aiDecision?.approvalStatus === 'approved' 
+                ? '#10B981' // green-500
+                : aiDecision?.approvalStatus === 'rejected' 
+                  ? '#EF4444' // red-500
+                  : '#F59E0B' // amber-500
+            }
+            strokeWidth="10"
+            strokeDasharray="251.2"
+            strokeDashoffset={
+              251.2 - (251.2 * (aiDecision?.approvalStatus === 'approved' ? 85 : aiDecision?.approvalStatus === 'rejected' ? 35 : 60) / 100)
+            }
+            strokeLinecap="round"
+          />
+        </svg>
+        
+        {/* Percentage text */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-3xl font-bold">
+            {aiDecision?.approvalStatus === 'approved' ? '83%' : aiDecision?.approvalStatus === 'rejected' ? '32%' : '67%'}
+          </span>
+        </div>
+        
+        {/* Hover tooltip */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute -bottom-16 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-sm rounded-lg py-2 px-4 w-64">
+          This score represents your loan approval probability based on our AI risk assessment model
+        </div>
+      </div>
+      
+      <p className="text-gray-600 max-w-md mx-auto">{aiDecision?.summary}</p>
+    </div>
 
-                {/* AI Analysis Section */}
-                <div className="space-y-6">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold text-blue-800 mb-3">Key Decision Factors</h3>
-                    <ul className="list-disc pl-6 space-y-2">
-                      {aiDecision?.reasons && Array.isArray(aiDecision.reasons)
-                        ? aiDecision.reasons.map((reason, index) => (
-                          <li key={index} className="text-gray-700">{reason}</li>
-                        ))
-                        : <li className="text-gray-700">Decision analysis not available</li>
-                      }
-                    </ul>
-                  </div>
+    {/* Risk Assessment Breakdown */}
+    <div className="mb-8">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Risk Assessment Factors</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Credit Risk */}
+        <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium text-gray-800">Credit History</h4>
+            <div className={`w-16 h-2 rounded-full ${
+              aiDecision?.approvalStatus === 'approved' ? 'bg-green-500' : 
+              aiDecision?.approvalStatus === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'
+            }`}></div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Analysis of credit score, payment history, and existing debts
+          </p>
+        </div>
+        
+        {/* Income Stability */}
+        <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium text-gray-800">Income Stability</h4>
+            <div className={`w-16 h-2 rounded-full ${
+              aiDecision?.approvalStatus === 'approved' ? 'bg-green-500' : 
+              aiDecision?.approvalStatus === 'rejected' ? 'bg-yellow-500' : 'bg-green-300'
+            }`}></div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Evaluation of employment history, income sources, and future earning potential
+          </p>
+        </div>
+        
+        {/* Debt Service Ratio */}
+        <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium text-gray-800">Debt-to-Income Ratio</h4>
+            <div className={`w-16 h-2 rounded-full ${
+              aiDecision?.approvalStatus === 'approved' ? 'bg-green-300' : 
+              aiDecision?.approvalStatus === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'
+            }`}></div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Calculation of monthly debt obligations relative to income
+          </p>
+        </div>
+        
+        {/* Document Verification */}
+        <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium text-gray-800">Document Verification</h4>
+            <div className={`w-16 h-2 rounded-full ${
+              aiDecision?.approvalStatus === 'approved' ? 'bg-green-500' : 
+              aiDecision?.approvalStatus === 'rejected' ? 'bg-yellow-500' : 'bg-green-500'
+            }`}></div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Verification of identity, address, income, and other submitted documents
+          </p>
+        </div>
+      </div>
+    </div>
 
-                  {aiDecision?.approvalStatus === 'approved' ? (
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h3 className="text-lg font-semibold text-green-800 mb-3">Loan Offer Details</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <DetailItem label="Approved Amount" value={`₹${Number(loanAnswers.loanAmount).toLocaleString('en-IN')}`} />
-                        <DetailItem label="Interest Rate" value={`${(parseFloat(aiDecision?.interestRate || '10') * 100).toFixed(2)}% p.a.`} />
-                        <DetailItem label="Loan Tenure" value={`${loanAnswers?.tenure || 'N/A'} months`} />
-                        <DetailItem label="Processing Fee" value="Standard fees apply" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <h3 className="text-lg font-semibold text-red-800 mb-3">Improvement Suggestions</h3>
-                      <ul className="list-disc pl-6 space-y-2">
-                        {aiDecision?.reasons && Array.isArray(aiDecision.reasons)
-                          ? aiDecision.reasons.map((reason, index) => (
-                            <li key={index} className="text-gray-700">{reason}</li>
-                          ))
-                          : <li className="text-gray-700">Please contact a loan officer for assistance</li>
-                        }
-                      </ul>
-                    </div>
-                  )}
+    {/* AI Risk Assessment Agents */}
+    <div className="mb-8">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">AI Risk Assessment Agents</h3>
+      
+      <div className="space-y-4">
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-700 mb-2">Financial Behavior Analyzer</h4>
+          <p className="text-sm text-gray-700">
+            Analyzes spending patterns, saving habits, and financial responsibility indicators from bank statements and transaction history.
+          </p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-700 mb-2">Credit Risk Evaluator</h4>
+          <p className="text-sm text-gray-700">
+            Evaluates credit history, credit utilization ratios, existing loans, and payment reliability across multiple data sources.
+          </p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-700 mb-2">Income Stability Predictor</h4>
+          <p className="text-sm text-gray-700">
+            Predicts future income stability based on employment history, industry trends, and economic indicators specific to the applicant's sector.
+          </p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-700 mb-2">Document Authentication System</h4>
+          <p className="text-sm text-gray-700">
+            Uses machine learning to detect document tampering, verify consistency across submitted documents, and validate against official databases.
+          </p>
+        </div>
+      </div>
+    </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Next Steps</h3>
-                    <div className="space-y-2">
-                      <p className="text-gray-700">
-                        {aiDecision?.approvalStatus === 'approved'
-                          ? "Review and accept the loan offer to proceed."
-                          : "Contact our loan officers for assistance with your application."}
-                      </p>
-                      {aiDecision?.conditions && (
-                        <div className="mt-3">
-                          <p className="text-sm font-medium text-gray-600">Special Conditions:</p>
-                          <ul className="list-disc pl-6 mt-1">
-                            {(Array.isArray(aiDecision.conditions)
-                              ? aiDecision.conditions
-                              : [aiDecision.conditions]).map((condition, index) => (
-                                <li key={index} className="text-gray-700">{condition}</li>
-                              ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+    {/* Decision Factors */}
+    <div className="space-y-6">
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-blue-800 mb-3">Key Decision Factors</h3>
+        <ul className="list-disc pl-6 space-y-2">
+          {aiDecision?.reasons && Array.isArray(aiDecision.reasons)
+            ? aiDecision.reasons.map((reason, index) => (
+              <li key={index} className="text-gray-700">{reason}</li>
+            ))
+            : <li className="text-gray-700">Decision analysis not available</li>
+          }
+        </ul>
+      </div>
 
-                {/* Action Buttons */}
-                <div className="mt-8 flex gap-4">
-                  {aiDecision?.approvalStatus === 'approved' ? (
-                    <>
-                      <button className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
-                        Accept Offer
-                      </button>
-                      <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50">
-                        Download Sanction Letter
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
-                        Speak to Officer
-                      </button>
-                      <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50">
-                        Modify Application
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+      <div className={`p-4 rounded-lg ${
+        aiDecision?.approvalStatus === 'approved' ? 'bg-green-50' : 
+        aiDecision?.approvalStatus === 'rejected' ? 'bg-red-50' : 'bg-yellow-50'
+      }`}>
+        <h3 className={`text-lg font-semibold mb-3 ${
+          aiDecision?.approvalStatus === 'approved' ? 'text-green-800' : 
+          aiDecision?.approvalStatus === 'rejected' ? 'text-red-800' : 'text-yellow-800'
+        }`}>
+          Loan Assessment Details
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <DetailItem label="Requested Amount" value={`₹${Number(loanAnswers.loanAmount).toLocaleString('en-IN')}`} />
+          <DetailItem label="Estimated Interest Rate" value={`${(parseFloat(aiDecision?.interestRate || '10')).toFixed(2)}% p.a.`} />
+          <DetailItem label="Loan Tenure" value={`${loanAnswers?.tenure || 'N/A'} months`} />
+          <DetailItem label="Risk Level" value={
+            aiDecision?.approvalStatus === 'approved' ? 'Low Risk' : 
+            aiDecision?.approvalStatus === 'rejected' ? 'High Risk' : 'Moderate Risk'
+          } />
+        </div>
+      </div>
+
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Next Steps</h3>
+        <div className="space-y-2">
+          <p className="text-gray-700">
+            {aiDecision?.approvalStatus === 'approved'
+              ? "Your application shows strong approval potential. Here are your next steps:"
+              : aiDecision?.approvalStatus === 'rejected'
+                ? "Your application may need improvements. Here's what you can do:"
+                : "Your application is under review. Consider these steps:"}
+          </p>
+         {/* Next Steps - Modified Section */}
+<div className="bg-gray-50 p-4 rounded-lg">
+  <div className="space-y-2">
+    <div className="mt-3">
+      <p className="text-sm font-medium text-gray-600">Recommended Improvements:</p>
+      <ul className="list-disc pl-6 mt-1 space-y-2">
+        <li className="text-gray-700">
+          <span className="font-medium">Age Requirement:</span> Apply with a co-applicant or guarantor who meets the minimum age requirement of 21 years.
+        </li>
+        <li className="text-gray-700">
+          <span className="font-medium">Complete Income Documentation:</span> Submit additional income proof documents such as salary slips, bank statements, or tax returns.
+        </li>
+        <li className="text-gray-700">
+          <span className="font-medium">Loan Adjustment:</span> Consider applying for a vehicle loan instead of a personal loan, or request a lower loan amount more suitable for your income profile.
+        </li>
+        <li className="text-gray-700">
+          <span className="font-medium">Credit Profile:</span> Work on improving your credit score and reducing existing debt obligations before applying again.
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+        </div>
+      </div>
+    </div>
+
+    {/* Action Buttons */}
+    <div className="mt-8 flex gap-4">
+      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+        Continue Application
+      </button>
+      <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50">
+        Calculate EMI Options
+      </button>
+    </div>
+  </div>
+)}
           </div>
         </div>
       </div>

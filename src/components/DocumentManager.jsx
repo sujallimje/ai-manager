@@ -12,7 +12,7 @@ const DocumentManager = ({ onComplete }) => {
   const [verificationMethods, setVerificationMethods] = useState({});
   const [manualEntryMode, setManualEntryMode] = useState({});
   const [manualFormData, setManualFormData] = useState({});
-
+  const [NAME, setNAME] = useState("");
   // Document types to be uploaded in sequence
   const documentTypes = [
     "identity",
@@ -38,7 +38,7 @@ const DocumentManager = ({ onComplete }) => {
     ],
     pan: [
       { key: "panNumber", label: "PAN Number", type: "text", required: true },
-      { key: "name", label: "Name as per PAN", type: "text", required: true },
+      { key: "name", label: "Name as per PAN", type: "text", required: false },
       { key: "fatherName", label: "Father's Name", type: "text", required: false },
     ],
     address: [
@@ -87,14 +87,16 @@ const DocumentManager = ({ onComplete }) => {
     identity: (data) => {
       if (!data.idNumber) return "ID number is required";
       if (!data.name) return "Name is required";
+      setNAME(data.name);
       return null;
     },
     pan: (data) => {
       if (!data.panNumber) return "PAN number is required";
+      if (data.name.toLowerCase().split('').sort().join('') !== NAME.toLowerCase().split('').sort().join('')) {alert("Different Person Detected");return "Different Person Detected";}
       return null;
     },
     address: (data) => {
-      if (!data.address) return "Address information is required";
+      // if (!data.address) return "Address information is required";
       return null;
     },
     income: (data) => {
@@ -102,7 +104,7 @@ const DocumentManager = ({ onComplete }) => {
       return null;
     },
     bank: (data) => {
-      if (!data.accountNumber) return "Account number is required";
+      // if (!data.accountNumber) return "Account number is required";
       return null;
     }
   };

@@ -202,31 +202,34 @@ def extract_pan_info(image_path):
     # Extract name (usually after "Name" or on a line by itself)
     name_match = re.search(r'(?:Name|नाम)[\s:]+([\w\s]+)', text, re.IGNORECASE)
     if name_match:
-        result['name'] = name_match.group(1).strip()
+        candidate_name = name_match.group(1).strip()
+        words = candidate_name.split()
+        filtered_words = [w for w in words if w.lower() != 'gender']
+        if filtered_words:
+            result['name'] = ' '.join(filtered_words)
     else:
         # Try alternative name detection
         lines = text.split('\n')
-        for i, line in enumerate(lines):
-            if len(line.strip()) > 5 and len(line.strip()) < 40:
-                # Avoid lines with PAN number pattern
-                if not re.search(r'[A-Z]{5}\d{4}[A-Z]{1}', line):
-                    result['name'] = line.strip()
-                    break
+        for line in lines:
+            # Avoid lines with PAN number pattern
+            if not re.search(r'[A-Z]{5}\d{4}[A-Z]{1}', line):
+                result['name'] = line.strip()
+                break
     
-    # Extract DOB (usually in format DD/MM/YYYY)
-    dob_match = re.search(r'(?:DOB|Date of Birth|जन्म तिथि)[\s:]+([\d/.-]+)', text, re.IGNORECASE)
-    if dob_match:
-        result['dob'] = dob_match.group(1).strip()
+    # # Extract DOB (usually in format DD/MM/YYYY)
+    # dob_match = re.search(r'(?:DOB|Date of Birth|जन्म तिथि)[\s:]+([\d/.-]+)', text, re.IGNORECASE)
+    # if dob_match:
+    #     result['dob'] = dob_match.group(1).strip()
     
-    # Extract PAN number (10 characters, alphanumeric)
+    # Extract                                                                                                        number (10 characters, alphanumeric)
     pan_match = re.search(r'([A-Z]{5}[0-9]{4}[A-Z]{1})', text)
     if pan_match:
         result['id_number'] = pan_match.group(1)
     
     # Extract father's name
-    father_match = re.search(r'(?:Father|Father\'s Name|पिता|पिता का नाम)[\s:]+([\w\s]+)', text, re.IGNORECASE)
-    if father_match:
-        result['father_name'] = father_match.group(1).strip()
+    # father_match = re.search(r'(?:Father|Father\'s Name|पिता|पिता का नाम)[\s:]+([\w\s]+)', text, re.IGNORECASE)
+    # if father_match:
+    #     result['father_name'] = father_match.group(1).strip()
     
     return result
 
