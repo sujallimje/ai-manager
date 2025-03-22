@@ -494,7 +494,7 @@ export default function Apply() {
             <video
               key={step}
               autoPlay
-              loop
+              
               className="absolute w-full h-full lg:max-h-[100vh] object-cover"
             >
               <source src={videoUrls[step - 1]} type="video/mp4" />
@@ -819,7 +819,7 @@ export default function Apply() {
       </div>
     </div>
 
-    {/* AI Risk Assessment Agents */}
+    {/* AI Risk Assessment Agents
     <div className="mb-8">
       <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">AI Risk Assessment Agents</h3>
       
@@ -852,7 +852,7 @@ export default function Apply() {
           </p>
         </div>
       </div>
-    </div>
+    </div> */}
 
     {/* Decision Factors */}
     <div className="space-y-6">
