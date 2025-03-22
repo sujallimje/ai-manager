@@ -66,7 +66,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
       { id: "address", text: "Thanks! Now, what's your current residential address?", type: "text" },
       { id: "loanAmount", text: "Alright, now let's talk about your loan needs. How much loan amount are you looking for?", type: "text" },
       { id: "purpose", text: `Got it. What's the purpose of this ${type} loan?`, type: "text" },
-      { id: "tenure", text: "That makes sense. And how long would you like the loan for? Are you thinking of a tenure like 12 months, 24 months, or something else?", type: "text" },
+      { id: "tenure", text: "That makes sense. And how long would you like the loan for? Are you thinking of a tenure like 24 months, 10years, or something else?", type: "text" },
       { id: "employmentStatus", text: "Understood! Now, let's go over your employment details. Are you currently employed or self-employed?", type: "text" },
       { id: "employmentDetails", text: "If employed, could you tell me your job title and company name? If self-employed, what type of business do you run?", type: "text" },
       { id: "income", text: "Thanks! And what's your approximate monthly or annual income?", type: "text" },
@@ -74,7 +74,7 @@ const LoanQuestionnaire = ({ loanType, onComplete }) => {
       { id: "bankAccount", text: "Alright. Let's check a few more details. Do you have an active bank account?", type: "text" },
       { id: "creditScore", text: "Do you happen to know your credit score?", type: "text" },
       { id: "defaults", text: "Have you ever faced any loan defaults or financial issues in the past?", type: "text" },
-      { id: "guarantors", text: "No problem, I just needed to ask. Now, do you have any guarantors or co-applicants for this loan?", type: "text" },
+      { id: "guarantors", text: " Now please fill details of guarantors for this loan?", type: "text" },
       { id: "updates", text: "That's helpful to know. Lastly, would you like to receive loan-related updates via SMS or email?", type: "text" }
     ];
 

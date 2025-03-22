@@ -503,11 +503,12 @@ export default function Apply() {
 
             {step === 1 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <p className="text-gray-700 mb-6">
-                  Please adjust your camera so that your face is clearly
-                  visible. Make sure you're in a well-lit area and position your
-                  face in the center of the frame.
-                </p>
+                <ul className="text-green-600 mb-6 size-2xl font-semibold list-disc">
+                  <li> Please adjust your camera so that your face is clearly
+                  visible. </li>
+                  <li>Make sure you're in a well-lit area and position your
+                  face in the center of the frame.</li>
+                </ul>
                 <div className="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-500">
                   <p className="text-blue-800">
                     Look straight into the camera and follow the instructions
