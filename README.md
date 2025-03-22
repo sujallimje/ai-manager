@@ -99,7 +99,12 @@ Ensure you have the following installed:
    ```sh
    npm run dev  # or yarn dev
    ```
-6. **Access the application**
+
+6. **Change firebase.js and groq key**
+   - src/lib/firebase.js
+   - src/app/api/chat/route.ts
+
+7. **Access the application**
    - Open [http://localhost:3000](http://localhost:3000) in your browser.
    - To view the demo video, access the `CapitalCue - Your AI Branch Manager.mp4` file in the root project directory.
 
@@ -133,8 +138,15 @@ The system uses advanced OCR techniques to extract information from various docu
 - **Database:** MongoDB (optional, for storing loan applications)
 - **Deployment:** Vercel
 
+## Architecture Diagram
+![image](ArchitectureDiagram.png)
+
 ## Future Enhancements
 - Implement AI-powered chat/video assistant using NLP.
 - Add multilingual support with AI-generated voice responses.
 - Integrate with banking APIs for real-time loan approval processing.
 - Enhance OCR accuracy with deep learning-based document analysis.
+
+
+## Contributions are welcomed!
+- Add a pull request 
