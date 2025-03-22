@@ -6,7 +6,7 @@ import DocumentManager from "../../components/DocumentManager";
 import ChatBot from "../../components/ChatBot";
 import LoanQuestionnaire from "../../components/LoanQuestionnaire";
 import EMICalculatorButton from "../../components/EMICalculator";
-import EMICalculator from "../../components/EMICalculatorButton";import { CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import EMICalculator from "../../components/EMICalculatorButton"; import { CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
 
 const DetailItem = ({ label, value }) => (
   <div className="bg-gray-50 p-3 rounded-lg">
@@ -45,8 +45,8 @@ export default function Apply() {
 
   async function getGroqAssessment(applicationData) {
     const apiKey = "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";
-    
-  
+
+
     if (!apiKey) {
       console.error("Missing Groq API key");
       return {
@@ -57,7 +57,7 @@ export default function Apply() {
         summary: "AI assessment could not be performed due to missing API key",
       };
     }
-  
+
     const prompt = `
     Analyze this loan application and provide a detailed assessment:
     
@@ -85,7 +85,7 @@ export default function Apply() {
     4. conditions: any special conditions
     5. summary: 50-word explanation
     `;
-  
+
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -99,21 +99,21 @@ export default function Apply() {
           response_format: { type: "json_object" },
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error(`API Error: ${response.statusText}`);
       }
-  
+
       const data = await response.json();
       return data.choices[0].message.content
         ? JSON.parse(data.choices[0].message.content)
         : {
-            approvalStatus: "error",
-            reasons: ["Invalid response format"],
-            interestRate: "N/A",
-            conditions: ["Unexpected API response"],
-            summary: "AI assessment failed due to an invalid response format",
-          };
+          approvalStatus: "error",
+          reasons: ["Invalid response format"],
+          interestRate: "N/A",
+          conditions: ["Unexpected API response"],
+          summary: "AI assessment failed due to an invalid response format",
+        };
     } catch (error) {
       console.error("Groq API Error:", error);
       return {
@@ -125,7 +125,7 @@ export default function Apply() {
       };
     }
   }
-  
+
 
 
   /// Start monitoring after verification
@@ -301,7 +301,7 @@ export default function Apply() {
 
   const submitApplication = async () => {
     setIsVerifying(true);
-  
+
     try {
       // Prepare application data
       const applicationData = {
@@ -310,17 +310,17 @@ export default function Apply() {
         extracted: extractedData,
         documents: Object.keys(uploadedDocuments)
       };
-  
+
       // Get AI assessment
       const aiDecision = await getGroqAssessment(applicationData);
-  
+
       setApplicationStatus(aiDecision.approvalStatus);
       setVerificationComplete(true);
       setAiDecision(aiDecision);
-      
+
       // Add this line to advance to the next step:
       handleNext();
-  
+
     } catch (error) {
       console.error("Submission failed:", error);
       setApplicationStatus("error");
@@ -331,7 +331,7 @@ export default function Apply() {
 
   const verifyIdentity = () => {
     setIsVerifying(true);
-    
+
     // Simulate verification process
     setTimeout(() => {
       setIsVerifying(false);
@@ -345,15 +345,15 @@ export default function Apply() {
     "/videos/s1.mp4", // Video for step 1
     "/videos/s2a.mp4", // Video for step 2a
     "/videos/stepx.mp4", // Video for step 2b
-    
+
     "/videos/s3.mp4", // Video for step 3
     "/videos/s4.mp4", // Video for step 4
     // Video for step 5
     applicationStatus === "approved"
       ? "/videos/s5.mp4"
       : applicationStatus === "rejected"
-      ? "/videos/s6.mp4"
-      : "/videos/s7.mp4", // Video for step 6
+        ? "/videos/s6.mp4"
+        : "/videos/s7.mp4", // Video for step 6
   ];
 
   const stepTitles = [
@@ -383,21 +383,19 @@ export default function Apply() {
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      step > index
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${step > index
                         ? "bg-blue-600 text-white"
                         : step === index + 1
-                        ? "bg-blue-100 border-2 border-blue-600 text-blue-600"
-                        : "bg-gray-200 text-gray-500"
-                    }`}
+                          ? "bg-blue-100 border-2 border-blue-600 text-blue-600"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
                   >
                     {index + 1}
                   </div>
                   {index < stepTitles.length - 1 && (
                     <div
-                      className={`w-12 h-1 ${
-                        step > index ? "bg-blue-600" : "bg-gray-200"
-                      }`}
+                      className={`w-12 h-1 ${step > index ? "bg-blue-600" : "bg-gray-200"
+                        }`}
                     ></div>
                   )}
                 </div>
@@ -679,111 +677,111 @@ export default function Apply() {
             )}
 
 
-{step === 6 && (
-  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-    {/* Decision Header */}
-    <div className="text-center mb-8">
-      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${aiDecision?.approvalStatus === 'approved' ? 'bg-green-100' : 'bg-red-100'}`}>
-        {aiDecision?.approvalStatus === 'approved' ? (
-          <CheckIcon className="w-8 h-8 text-green-600" />
-        ) : (
-          <XMarkIcon className="w-8 h-8 text-red-600" />
-        )}
-      </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-        {aiDecision?.approvalStatus === 'approved'
-          ? 'Congratulations! Loan Approved'
-          : 'Application Requires Review'}
-      </h2>
-      <p className="text-gray-600">{aiDecision?.summary}</p>
-    </div>
+            {step === 6 && (
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                {/* Decision Header */}
+                <div className="text-center mb-8">
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${aiDecision?.approvalStatus === 'approved' ? 'bg-green-100' : 'bg-red-100'}`}>
+                    {aiDecision?.approvalStatus === 'approved' ? (
+                      <CheckIcon className="w-8 h-8 text-green-600" />
+                    ) : (
+                      <XMarkIcon className="w-8 h-8 text-red-600" />
+                    )}
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {aiDecision?.approvalStatus === 'approved'
+                      ? 'Congratulations! Loan Approved'
+                      : 'Application Requires Review'}
+                  </h2>
+                  <p className="text-gray-600">{aiDecision?.summary}</p>
+                </div>
 
-    {/* AI Analysis Section */}
-    <div className="space-y-6">
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-blue-800 mb-3">Key Decision Factors</h3>
-        <ul className="list-disc pl-6 space-y-2">
-          {aiDecision?.reasons && Array.isArray(aiDecision.reasons) 
-            ? aiDecision.reasons.map((reason, index) => (
-                <li key={index} className="text-gray-700">{reason}</li>
-              ))
-            : <li className="text-gray-700">Decision analysis not available</li>
-          }
-        </ul>
-      </div>
+                {/* AI Analysis Section */}
+                <div className="space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-blue-800 mb-3">Key Decision Factors</h3>
+                    <ul className="list-disc pl-6 space-y-2">
+                      {aiDecision?.reasons && Array.isArray(aiDecision.reasons)
+                        ? aiDecision.reasons.map((reason, index) => (
+                          <li key={index} className="text-gray-700">{reason}</li>
+                        ))
+                        : <li className="text-gray-700">Decision analysis not available</li>
+                      }
+                    </ul>
+                  </div>
 
-      {aiDecision?.approvalStatus === 'approved' ? (
-        <div className="bg-green-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold text-green-800 mb-3">Loan Offer Details</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <DetailItem label="Approved Amount" value={`₹${Number(loanAnswers.loanAmount).toLocaleString('en-IN')}`} />
-            <DetailItem label="Interest Rate" value={`${aiDecision?.interestRate || 'N/A'}% p.a.`} />
-            <DetailItem label="Loan Tenure" value={`${loanAnswers?.tenure || 'N/A'} months`} />
-            <DetailItem label="Processing Fee" value="Standard fees apply" />
-          </div>
-        </div>
-      ) : (
-        <div className="bg-red-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold text-red-800 mb-3">Improvement Suggestions</h3>
-          <ul className="list-disc pl-6 space-y-2">
-            {aiDecision?.reasons && Array.isArray(aiDecision.reasons) 
-              ? aiDecision.reasons.map((reason, index) => (
-                  <li key={index} className="text-gray-700">{reason}</li>
-                ))
-              : <li className="text-gray-700">Please contact a loan officer for assistance</li>
-            }
-          </ul>
-        </div>
-      )}
+                  {aiDecision?.approvalStatus === 'approved' ? (
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h3 className="text-lg font-semibold text-green-800 mb-3">Loan Offer Details</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <DetailItem label="Approved Amount" value={`₹${Number(loanAnswers.loanAmount).toLocaleString('en-IN')}`} />
+                        <DetailItem label="Interest Rate" value={`${(parseFloat(aiDecision?.interestRate || '10') * 100).toFixed(2)}% p.a.`} />
+                        <DetailItem label="Loan Tenure" value={`${loanAnswers?.tenure || 'N/A'} months`} />
+                        <DetailItem label="Processing Fee" value="Standard fees apply" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <h3 className="text-lg font-semibold text-red-800 mb-3">Improvement Suggestions</h3>
+                      <ul className="list-disc pl-6 space-y-2">
+                        {aiDecision?.reasons && Array.isArray(aiDecision.reasons)
+                          ? aiDecision.reasons.map((reason, index) => (
+                            <li key={index} className="text-gray-700">{reason}</li>
+                          ))
+                          : <li className="text-gray-700">Please contact a loan officer for assistance</li>
+                        }
+                      </ul>
+                    </div>
+                  )}
 
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">Next Steps</h3>
-        <div className="space-y-2">
-          <p className="text-gray-700">
-            {aiDecision?.approvalStatus === 'approved' 
-              ? "Review and accept the loan offer to proceed." 
-              : "Contact our loan officers for assistance with your application."}
-          </p>
-          {aiDecision?.conditions && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-gray-600">Special Conditions:</p>
-              <ul className="list-disc pl-6 mt-1">
-                {(Array.isArray(aiDecision.conditions) 
-                  ? aiDecision.conditions 
-                  : [aiDecision.conditions]).map((condition, index) => (
-                    <li key={index} className="text-gray-700">{condition}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Next Steps</h3>
+                    <div className="space-y-2">
+                      <p className="text-gray-700">
+                        {aiDecision?.approvalStatus === 'approved'
+                          ? "Review and accept the loan offer to proceed."
+                          : "Contact our loan officers for assistance with your application."}
+                      </p>
+                      {aiDecision?.conditions && (
+                        <div className="mt-3">
+                          <p className="text-sm font-medium text-gray-600">Special Conditions:</p>
+                          <ul className="list-disc pl-6 mt-1">
+                            {(Array.isArray(aiDecision.conditions)
+                              ? aiDecision.conditions
+                              : [aiDecision.conditions]).map((condition, index) => (
+                                <li key={index} className="text-gray-700">{condition}</li>
+                              ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-    {/* Action Buttons */}
-    <div className="mt-8 flex gap-4">
-      {aiDecision?.approvalStatus === 'approved' ? (
-        <>
-          <button className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
-            Accept Offer
-          </button>
-          <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50">
-            Download Sanction Letter
-          </button>
-        </>
-      ) : (
-        <>
-          <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
-            Speak to Officer
-          </button>
-          <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50">
-            Modify Application
-          </button>
-        </>
-      )}
-    </div>
-  </div>
-)}
+                {/* Action Buttons */}
+                <div className="mt-8 flex gap-4">
+                  {aiDecision?.approvalStatus === 'approved' ? (
+                    <>
+                      <button className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
+                        Accept Offer
+                      </button>
+                      <button className="flex-1 border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50">
+                        Download Sanction Letter
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                        Speak to Officer
+                      </button>
+                      <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50">
+                        Modify Application
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
