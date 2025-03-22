@@ -39,8 +39,6 @@ const DocumentManager = ({ onComplete }) => {
     ],
     pan: [
       { key: "panNumber", label: "PAN Number", type: "text", required: true },
-      { key: "name", label: "Name as per PAN", type: "text", required: true },
-      { key: "fatherName", label: "Father's Name", type: "text", required: false },
     ],
     address: [
       { key: "address", label: "Street Address", type: "text", required: true },
