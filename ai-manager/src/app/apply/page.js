@@ -153,7 +153,7 @@ export default function Apply() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(countdownTimerRef.current);
-          window.location.href = "/session-ended";
+          window.location.href = "/";
           return 0;
         }
         return prev - 1;
